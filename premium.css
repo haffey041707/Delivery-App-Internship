@@ -968,6 +968,12 @@ body,.app-shell,.app-main{background:var(--paper)!important;color:var(--ink)}
 .language-switch-overlay span{background:#EEEAFE!important;color:#6856D9!important}
 .language-switch-overlay>div>i{background:linear-gradient(90deg,#EEEAFE 20%,#6856D9 20% 60%,#EEEAFE 60%)!important}
 
+/* Assurance ticker and dashboard badges: eliminate the last inherited green-gray text. */
+.network-banner{border-top-color:#E5E1F1!important;background:rgba(250,250,255,.92)!important}
+.network-marquee span{color:#5142BD!important}
+.network-marquee svg{color:#6856D9!important}
+.graph-legend,#graphSummary{color:#6856D9!important;background:#F2F0FF!important;border-color:#DCD6F6!important}
+
 /* Shipment bars: icon, name, status and fare all share one row. */
 .real-order-item{grid-template-columns:32px minmax(0,1fr) auto auto;align-items:center}
 .real-order-item>span{grid-row:auto}
