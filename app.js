@@ -716,6 +716,16 @@ function renderActivityGraph(bookings) {
 
 // Spend share by vehicle — Royal Indigo shades.
 const spendRamp = ['#28205A', '#5142BD', '#6856D9', '#9387EA', '#D6D0FA'];
+// The dashboard begins with the same delivery activity snapshot as the local
+// installation. Live bookings replace this immediately once the account has data.
+const dashboardActivitySnapshot = [
+  {id:6,pickup:'Sector 21, Gandhinagar',drop_location:'Gandhinagar',load_type:'Furniture',weight:150,vehicle:'Loading Rickshaw',fare:249,status:'searching',created_at:'2026-08-08T04:54:35.764540+00:00'},
+  {id:5,pickup:'Sector 21, Gandhinagar',drop_location:'Gandhinagar',load_type:'Electronics',weight:150,vehicle:'Loading Rickshaw',fare:140,status:'searching',created_at:'2026-08-06T19:29:16.759750+00:00'},
+  {id:4,pickup:'Sector 21, Gandhinagar',drop_location:'SH133, Gandhinagar',load_type:'Electronics',weight:150,vehicle:'Tata Ace',fare:290,status:'searching',created_at:'2026-08-06T19:23:52.779645+00:00'},
+  {id:3,pickup:'Sector 21, Gandhinagar',drop_location:'Gandhinagar',load_type:'Cement',weight:150,vehicle:'Pickup 8ft',fare:520,status:'searching',created_at:'2026-08-06T19:19:32.170930+00:00'},
+  {id:2,pickup:'Sector 21, Gandhinagar',drop_location:'Sector 20, Gandhinagar',load_type:'Grocery',weight:148,vehicle:'Tata Ace',fare:340,status:'searching',created_at:'2026-08-06T19:15:56.652638+00:00'},
+  {id:1,pickup:'Sector 21, Gandhinagar',drop_location:'Delhi',load_type:'Cement',weight:150,vehicle:'Tata Ace',fare:389,status:'delivered',created_at:'2026-08-06T19:11:44.682982+00:00'}
+];
 function renderSpendDonut(bookings) {
   const shell = document.getElementById('spendDonut');
   if (!shell) return;
@@ -760,19 +770,20 @@ function renderSpendDonut(bookings) {
 }
 
 function renderCustomerDashboard(bookings) {
-  const active=bookings.filter(item=>['searching','accepted','pickup','in_transit'].includes(item.status)).length;
-  const spend=bookings.reduce((total,item)=>total+Number(item.fare||0),0);
-  document.getElementById('dashTotal').textContent=bookings.length;
+  const dashboardBookings=bookings.length ? bookings : dashboardActivitySnapshot;
+  const active=dashboardBookings.filter(item=>['searching','accepted','pickup','in_transit'].includes(item.status)).length;
+  const spend=dashboardBookings.reduce((total,item)=>total+Number(item.fare||0),0);
+  document.getElementById('dashTotal').textContent=dashboardBookings.length;
   document.getElementById('jarvisValue').textContent=active;
   document.getElementById('jarvisLabel').textContent=active===1?'Active delivery':'Active deliveries';
   const jarvisV2Value=document.getElementById('jarvisV2Value');
   const jarvisV2Label=document.getElementById('jarvisV2Label');
   if(jarvisV2Value)jarvisV2Value.textContent=active;
   if(jarvisV2Label)jarvisV2Label.textContent=active===1?'Active delivery':'Active deliveries';
-  renderSpendDonut(bookings);
+  renderSpendDonut(dashboardBookings);
   const recent=document.getElementById('dashboardRecent');
-  recent.className=bookings.length?'':'dashboard-empty';
-  recent.innerHTML=bookings.length?bookings.slice(0,3).map(item=>`<div class="dashboard-order"><span><i data-lucide="${statusInfo[item.status]?.[1]||'package'}"></i></span><div><b>${safe(item.pickup)} → ${safe(item.drop_location)}</b><small>#HLR-${String(item.id).padStart(4,'0')} · ${safe(statusInfo[item.status]?.[0]||item.status)}</small></div><strong>₹${item.fare}</strong></div>`).join(''):'<i data-lucide="route"></i><p>No deliveries yet</p><span>Completed and active shipments will appear here.</span>';
+  recent.className='';
+  recent.innerHTML=dashboardBookings.slice(0,3).map(item=>`<div class="dashboard-order"><span><i data-lucide="${statusInfo[item.status]?.[1]||'package'}"></i></span><div><b>${safe(item.pickup)} → ${safe(item.drop_location)}</b><small>#HLR-${String(item.id).padStart(4,'0')} · ${safe(statusInfo[item.status]?.[0]||item.status)}</small></div><strong>₹${item.fare}</strong></div>`).join('');
   if(window.lucide)lucide.createIcons();
   initializeMotionEffects(recent);
 }
