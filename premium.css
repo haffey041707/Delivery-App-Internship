@@ -947,6 +947,27 @@ body,.app-shell,.app-main{background:var(--paper)!important;color:var(--ink)}
 .settings-bars button.active>span{background:#6856D9;color:#fff;box-shadow:0 5px 14px rgba(104,86,217,.35)}
 .settings-bars button.active>svg{color:#6856D9}
 
+/* Production palette guard: saved places and legacy interaction states must stay
+   in the Royal Indigo palette rather than inheriting the former green theme. */
+.place-card:hover,.place-card:focus-within{border-color:#B8AFED!important;box-shadow:0 12px 28px rgba(40,32,90,.10)!important}
+.place-mark,.places-empty>span{background:#EEEAFE!important;color:#6856D9!important}
+.place-actions button,.place-actions button:hover,.place-actions button:focus-visible,.place-actions button:active{
+  color:#6856D9!important;border-color:#E0DBF0!important;background:#FFFFFF!important;
+  box-shadow:none!important;outline:none!important
+}
+.place-actions button:hover,.place-actions button:focus-visible{background:#F5F3FF!important;border-color:#B8AFED!important}
+.saved-route-notice{border-color:#DCD6F6!important;background:#F4F1FF!important}
+.saved-route-notice>span>svg{color:#6856D9!important}
+.suggestions button:hover,.other-suggestions button:hover,.other-suggestions button.active,
+.method-list article[role=button]:hover,.language-menu button:hover{
+  background:#F4F1FF!important;color:#6856D9!important;border-color:#C7B8FF!important
+}
+.payment-choices label input:checked + span,.bank-card-options input:checked + span,
+.cash-default input:checked+i{background:#F2F0FF!important;border-color:#6856D9!important;color:#6856D9!important}
+.language-switch-overlay{background:rgba(40,32,90,.46)!important}
+.language-switch-overlay span{background:#EEEAFE!important;color:#6856D9!important}
+.language-switch-overlay>div>i{background:linear-gradient(90deg,#EEEAFE 20%,#6856D9 20% 60%,#EEEAFE 60%)!important}
+
 /* Shipment bars: icon, name, status and fare all share one row. */
 .real-order-item{grid-template-columns:32px minmax(0,1fr) auto auto;align-items:center}
 .real-order-item>span{grid-row:auto}
