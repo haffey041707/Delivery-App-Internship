@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f6f7f4" />
+  <title>Haulr — Local goods delivery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="premium.css" />
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Haulr home">
+        <span class="brand-mark"><span></span><span></span></span>
+        <span>haulr</span>
+      </a>
+      <div class="top-actions">
+        <div class="language-wrap"><button class="icon-button language-button" id="languageBtn" aria-label="Change language" aria-expanded="false"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a13.5 13.5 0 0 1 0 18 13.5 13.5 0 0 1 0-18Z"/></svg></button><div class="language-menu" id="languageMenu" role="menu" aria-label="Select language"><div><small>APP LANGUAGE</small><b>Choose language</b></div><button type="button" data-language="en">English</button><button type="button" data-language="hi">हिन्दी · Hindi</button><button type="button" data-language="ta">தமிழ் · Tamil</button><button type="button" data-language="te">తెలుగు · Telugu</button><button type="button" data-language="bn">বাংলা · Bengali</button><button type="button" data-language="mr">मराठी · Marathi</button><button type="button" data-language="gu">ગુજરાતી · Gujarati</button><button type="button" data-language="kn">ಕನ್ನಡ · Kannada</button><button type="button" data-language="ml">മലയാളം · Malayalam</button><button type="button" data-language="pa">ਪੰਜਾਬੀ · Punjabi</button></div></div>
+        <div class="notification-wrap"><button class="icon-button" id="notificationBtn" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8.5a6 6 0 1 0-12 0c0 3.5-.6 5.4-1.6 6.6a.75.75 0 0 0 .6 1.2h14a.75.75 0 0 0 .6-1.2c-1-1.2-1.6-3.1-1.6-6.6Z"/><path d="M10.2 20a2.1 2.1 0 0 0 3.6 0"/></svg>
+          <i id="notificationDot"></i><b id="notificationCount">0</b>
+        </button></div>
+        <div class="account-wrap"><button class="account-button" id="accountBtn"><span id="accountInitials"><i data-lucide="user"></i></span><b id="accountName">Sign in</b><svg viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg></button><div class="account-menu" id="accountMenu"><div><span id="menuAvatar">U</span><p><b id="menuName">Guest</b><small id="menuEmail">Sign in to manage deliveries</small></p></div><button id="profileAction"><i data-lucide="log-in"></i><span>Sign in or create account</span></button><button id="logoutBtn" class="hidden"><i data-lucide="log-out"></i><span>Sign out</span></button></div></div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <aside class="customer-sidebar">
+        <div class="customer-nav">
+          <small>DELIVERY</small>
+          <button class="active" data-view="home"><i data-lucide="layout-dashboard"></i><span>Main</span></button>
+          <button data-view="booking"><i data-lucide="package-plus"></i><span>Book shipment</span><b>+</b></button>
+          <button data-view="orders"><i data-lucide="route"></i><span>My deliveries</span></button>
+          <button data-view="track"><i data-lucide="locate-fixed"></i><span>Track an order</span></button>
+          <small>ACCOUNT</small>
+          <button data-view="wallet"><i data-lucide="wallet-cards"></i><span>Wallet & balance</span></button>
+          <button data-view="places"><i data-lucide="map-pinned"></i><span>Saved places</span></button>
+          <button data-view="support"><i data-lucide="headphones"></i><span>Help & support</span></button>
+          <button data-settings-open="profile"><i data-lucide="user-round"></i><span>Profile details</span></button>
+          <button data-settings-open="notifications"><i data-lucide="bell-ring"></i><span>Notifications</span></button>
+          <button data-settings-open="delivery"><i data-lucide="sliders-horizontal"></i><span>Delivery preferences</span></button>
+          <button data-settings-open="security"><i data-lucide="shield-check"></i><span>Security</span></button>
+        </div>
+      </aside>
+      <section class="view active main-dashboard" id="home-view">
+        <div class="main-welcome"><div><span class="eyebrow"><span></span> LOCAL LOGISTICS, SIMPLIFIED</span><h1 id="dashboardGreeting">Move anything.<br><em>Without the stress.</em></h1><p>Book verified vehicles, follow every kilometre and manage payments from one dependable place.</p><div class="network-banner"><div class="network-marquee"><div class="marquee-track"><div class="marquee-group"><span><i data-lucide="shield-check"></i> Verified partners</span><span><i data-lucide="navigation"></i> Live route updates</span><span><i data-lucide="badge-indian-rupee"></i> Transparent fares</span><span><i data-lucide="package-check"></i> Protected goods</span></div><div class="marquee-group" aria-hidden="true"><span><i data-lucide="shield-check"></i> Verified partners</span><span><i data-lucide="navigation"></i> Live route updates</span><span><i data-lucide="badge-indian-rupee"></i> Transparent fares</span><span><i data-lucide="package-check"></i> Protected goods</span></div></div></div></div></div><div class="main-visual"><div class="visual-orbit one"></div><div class="visual-orbit two"></div><div class="delivery-node origin"><i data-lucide="package"></i><span>Pickup confirmed</span></div><div class="delivery-node vehicle"><i data-lucide="truck"></i><span>Driver en route</span></div><div class="delivery-node destination"><i data-lucide="map-pin-check"></i><span>Safe delivery</span></div><svg viewBox="0 0 500 260" preserveAspectRatio="none"><path d="M65 185 C170 30,330 250,440 78"/></svg></div></div>
+        <div class="main-insights">
+          <div class="insight-column">
+            <section class="activity-graph"><div class="section-title"><div><small>DELIVERY ACTIVITY</small><h2>Spend by vehicle</h2></div><span class="graph-legend" id="graphSummary">No delivery data yet</span></div><div class="donut-shell" id="spendDonut"></div></section>
+            <div class="jarvis-core" id="jarvisCore">
+              <div class="jarvis-rings" aria-hidden="true"><i class="ring-outer"></i><i class="ring-mid"></i><i class="ring-inner"></i><i class="ring-scan"></i><i class="ring-ticks"></i></div>
+              <div class="jarvis-readout"><small>SYSTEM STATUS</small><strong id="jarvisValue">0</strong><span id="jarvisLabel">Active deliveries</span></div>
+              <div class="jarvis-feed"><span><i></i> Fleet online</span><span><i></i> Routing live</span></div>
+              <div class="jarvis-v2" aria-label="Active deliveries status">
+                <div class="jarvis-v2-dial">
+                  <i class="jarvis-v2-orbit orbit-a" aria-hidden="true"></i><i class="jarvis-v2-orbit orbit-b" aria-hidden="true"></i><i class="jarvis-v2-scan" aria-hidden="true"></i>
+                  <div class="jarvis-v2-readout"><small>LIVE DELIVERIES</small><strong id="jarvisV2Value">0</strong><span id="jarvisV2Label">Active deliveries</span></div>
+                </div>
+                <div class="jarvis-v2-footer"><i></i><span>REAL-TIME FLEET STATUS</span></div>
+              </div>
+            </div>
+          </div>
+          <aside class="system-side">
+            <div class="main-metrics compact-metrics"><article class="metric-deliveries"><div class="metric-top"><span><i data-lucide="package-check"></i></span><em>ALL TIME</em></div><div><small>TOTAL DELIVERIES</small><strong id="dashTotal">0</strong><p>Your complete shipment history</p></div><i class="metric-glow"></i></article></div>
+          </aside>
+        </div>
+        <div class="main-sections"><section class="recent-real"><div class="section-title"><div><small>RECENT ACTIVITY</small><h2>Your deliveries</h2></div><button data-view="orders">See all →</button></div><div id="dashboardRecent" class="dashboard-empty"><i data-lucide="route"></i><p>No deliveries yet</p><span>Completed and active shipments will appear here.</span></div></section></div>
+      </section>
+      <section class="view" id="booking-view">
+        <div class="booking-layout">
+          <div class="booking-copy">
+            <div class="eyebrow"><span></span> Fast. Safe. Local.</div>
+            <h1>Your goods,<br><em>delivered right.</em></h1>
+            <p>Book trusted mini trucks and loading rickshaws for local deliveries. Live tracking, transparent fares, zero hassle.</p>
+            <div class="trust-row"><span class="verified-mark"><i data-lucide="badge-check"></i></span><div><strong>Verified delivery partners</strong><small>Driver details appear only after a real assignment</small></div></div>
+            <div class="vehicle-art" aria-hidden="true">
+              <div class="sun"></div><div class="road-line line-one"></div><div class="road-line line-two"></div>
+              <div class="truck"><div class="cargo"><i></i><i></i></div><div class="cab"><b></b><span></span></div><div class="wheel w1"></div><div class="wheel w2"></div></div>
+            </div>
+          </div>
+
+          <div class="booking-card">
+            <div class="step-head"><span>Book your delivery</span><small><b id="stepNum">1</b> of 3</small></div>
+            <div class="progress"><i id="progressBar"></i></div>
+            <form id="bookingForm">
+              <div class="form-step active" data-step="1">
+                <h2>Where should we go?</h2>
+                <p class="muted">Enter pickup and drop locations</p>
+                <div class="location-field"><label class="location-input pickup"><span class="pin-dot"></span><div><small>PICKUP LOCATION</small><input id="pickup" required autocomplete="off" placeholder="Search pickup area, landmark or address" /></div><button type="button" id="locateBtn" title="Use current location">⌖</button></label><div class="suggestions" id="pickupSuggestions"></div></div>
+                <div class="route-dashes"></div>
+                <div class="location-field"><label class="location-input drop"><span class="pin-dot"></span><div><small>DROP LOCATION</small><input id="drop" required autocomplete="off" placeholder="Search area, landmark or address" /></div></label><div class="suggestions" id="dropSuggestions"></div></div>
+                <div class="booking-map-wrap"><div id="bookingMap" class="notranslate" translate="no"></div><div class="map-badge"><i data-lucide="move"></i> Drag pins to adjust</div><div class="map-actions"><button type="button" class="map-expand" id="mapExpand" aria-label="Expand map"><i data-lucide="maximize-2"></i></button></div><div class="map-notice" id="mapNotice" role="status" aria-live="polite" hidden><span><i data-lucide="map-pin-off"></i></span><b>Location not found</b><small id="mapNoticeDetail">We could not place that address on the map.</small></div></div>
+                <button class="primary-btn" type="button" data-next>Continue <span>→</span></button>
+                <div class="secure-note"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg> Your delivery is protected with transit insurance</div>
+              </div>
+              <div class="form-step" data-step="2">
+                <button class="back-btn" type="button" data-back>← Back</button>
+                <h2>What are you sending?</h2><p class="muted">Help us choose the right vehicle</p><div class="saved-route-notice hidden" id="savedRouteNotice"><span><i data-lucide="circle-dot"></i><b data-saved-pickup>Pickup</b></span><i data-lucide="arrow-right"></i><span><i data-lucide="map-pin"></i><b data-saved-drop>Drop</b></span></div>
+                <div class="load-grid">
+                  <button type="button" class="load-option active" data-load="Furniture"><i data-lucide="armchair"></i>Furniture</button>
+                  <button type="button" class="load-option" data-load="Cement"><i data-lucide="brick-wall"></i>Construction</button>
+                  <button type="button" class="load-option" data-load="Grocery"><i data-lucide="package"></i>Groceries</button>
+                  <button type="button" class="load-option" data-load="Electronics"><i data-lucide="monitor"></i>Electronics</button>
+                  <button type="button" class="load-option" data-load="Business goods"><i data-lucide="store"></i>Business goods</button>
+                  <button type="button" class="load-option" data-load="Appliances"><i data-lucide="refrigerator"></i>Appliances</button>
+                  <button type="button" class="load-option" data-load="Documents"><i data-lucide="files"></i>Documents</button>
+                  <button type="button" class="load-option" data-load="Farm produce"><i data-lucide="wheat"></i>Farm produce</button>
+                  <button type="button" class="load-option" data-load="Machinery"><i data-lucide="cog"></i>Machinery</button>
+                  <button type="button" class="load-option" data-load="Textiles"><i data-lucide="shirt"></i>Textiles</button>
+                  <button type="button" class="load-option" id="otherLoadOption" data-load="Other"><i data-lucide="shapes"></i><span id="otherLoadLabel">Other</span></button>
+                </div>
+                <label class="field-label">Approximate weight<div class="field"><input id="weight" type="number" value="150" min="1"><span>kg</span></div></label>
+                <label class="field-label">Contact number<div class="field"><b>+91</b><input id="phone" inputmode="tel" value="98765 43210"></div></label>
+                <label class="field-label">Description (optional)<textarea id="description" placeholder="e.g. 2 wooden tables and 4 chairs"></textarea></label>
+                <div class="option-row"><label class="field-label">Pickup time<select id="schedule"><option value="now">Pickup now</option><option value="today">Later today</option><option value="tomorrow">Tomorrow</option></select></label><label class="field-label">Loading help<select id="helpers"><option value="0">No helper</option><option value="1">1 helper (+₹120)</option><option value="2">2 helpers (+₹220)</option></select></label></div>
+                <button class="primary-btn" type="button" data-next>Choose vehicle <span>→</span></button>
+              </div>
+              <div class="form-step" data-step="3">
+                <button class="back-btn" type="button" data-back>← Back</button>
+                <h2>Choose your ride</h2><p class="muted">Best options for your load</p>
+                <div class="ride-list">
+                  <label class="ride active"><input type="radio" name="ride" value="Loading Rickshaw" checked><span class="ride-icon"><i data-lucide="bike"></i></span><span><b>Loading Rickshaw</b><small>Up to 500 kg · 4.5 ft deck</small></span><strong>₹249</strong></label>
+                  <label class="ride"><input type="radio" name="ride" value="Tata Ace"><span class="ride-icon"><i data-lucide="truck"></i></span><span><b>Tata Ace</b><small>Up to 750 kg · 7 ft deck</small></span><strong>₹389</strong></label>
+                  <label class="ride"><input type="radio" name="ride" value="Pickup 8ft"><span class="ride-icon"><i data-lucide="container"></i></span><span><b>Pickup 8 ft</b><small>Up to 1,200 kg · Open body</small></span><strong>₹549</strong></label>
+                  <label class="ride"><input type="radio" name="ride" value="14ft Truck"><span class="ride-icon"><i data-lucide="truck"></i></span><span><b>14 ft Truck</b><small>Up to 3,500 kg · Closed body</small></span><strong>₹899</strong></label>
+                </div>
+                <div class="trip-facts"><span><small>DISTANCE</small><b id="routeDistance">Calculating…</b></span><span><small>EST. TIME</small><b id="routeDuration">—</b></span></div>
+                <div class="payment-choices"><small>PAYMENT METHOD</small><label><input type="radio" name="payment" value="UPI" checked><span id="paymentUpiLabel">UPI</span></label><label><input type="radio" name="payment" value="Cash"><span>Cash</span></label><label><input type="radio" name="payment" value="Card"><span id="paymentCardLabel">Card</span></label></div>
+                <div class="fare"><span>Estimated fare</span><strong id="fareValue">₹249</strong><small>Includes ₹20 insurance cover</small></div>
+                <button class="primary-btn" type="submit">Book now <span>→</span></button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="orders-view">
+        <div class="page-heading"><div><span class="eyebrow"><span></span> YOUR DELIVERIES</span><h1>My orders</h1><p>Track live deliveries and view past orders.</p></div><button class="primary-btn compact" data-view="booking">+ New delivery</button></div>
+        <div class="orders-empty" id="ordersEmpty"><span><i data-lucide="package-open"></i></span><h2>No deliveries yet</h2><p>Your first real booking will appear here with live status and driver details.</p><button class="primary-btn compact" data-view="booking">Book your first delivery</button></div>
+        <div class="orders-grid hidden" id="ordersGrid">
+          <article class="live-order">
+            <div class="order-top"><div><span class="live-pill"><i></i> LIVE</span><small id="activeOrderId">FETCHING ORDER…</small></div><strong id="activeOrderFare">—</strong></div>
+            <div class="driver-card"><div class="avatar">RS</div><div><small>YOUR DRIVER</small><h3>Rahul Sharma <span>★ 4.9</span></h3><p>GJ 18 BX 4821 · Loading Rickshaw</p></div><button class="phone-btn">☎</button></div>
+            <div class="timeline">
+              <div class="done"><i>✓</i><span><b>Driver assigned</b><small>12:42 PM</small></span></div>
+              <div class="done"><i>✓</i><span><b>Reached pickup</b><small>12:56 PM</small></span></div>
+              <div class="current"><i></i><span><b>On the way</b><small>Arriving by 1:35 PM</small></span></div>
+              <div><i></i><span><b>Delivered</b><small>Waiting</small></span></div>
+            </div>
+            <button class="track-btn" id="trackBtn">⌖ &nbsp; Live track delivery</button>
+          </article>
+          <aside class="route-card"><div class="live-map notranslate" id="liveMap" translate="no"><div class="eta-card"><small>ESTIMATED ARRIVAL</small><strong>12 min</strong><span>3.2 km away</span></div></div><div class="route-info"><div><i class="green"></i><span><small>PICKUP</small><b id="trackingPickup">Waiting for booking</b></span></div><div><i class="orange"></i><span><small>DROP</small><b id="trackingDrop">Waiting for booking</b></span></div></div></aside>
+        </div>
+      </section>
+
+      <section class="view dashboard-view" id="driver-view">
+        <aside class="side-nav"><div><p>DRIVER PORTAL</p><button class="active">▦ Dashboard</button><button>↗ My trips</button><button>◈ Wallet</button><button>♙ Profile</button><button>▤ Documents</button></div><button class="sign-out">↪ Sign out</button></aside>
+        <div class="dash-content">
+          <div class="dash-head"><div><p>Friday, 7 August</p><h1>Good morning, Rahul</h1></div><label class="online-toggle"><span><i></i> You're online</span><input type="checkbox" checked><b></b></label></div>
+          <div class="metric-grid"><article><span class="metric-icon orange">₹</span><div><small>TODAY'S EARNINGS</small><strong>₹850</strong><em>↑ 12% from yesterday</em></div></article><article><span class="metric-icon blue">↗</span><div><small>TRIPS TODAY</small><strong>6</strong><p>4 completed · 2 active</p></div></article><article><span class="metric-icon yellow">★</span><div><small>YOUR RATING</small><strong>4.9</strong><p>Based on 328 trips</p></div></article></div>
+          <div class="dash-columns"><section><div class="section-title"><h2>New booking request</h2><span class="timer">00:<b id="timer">28</b></span></div><article class="request-card" id="requestCard"><div class="request-head"><span id="requestFare">Waiting <small>for booking</small></span><b>Live</b></div><div class="mini-route"><div><i class="green"></i><span><small>PICKUP</small><b id="requestPickup">No pending request</b></span></div><div><i class="orange"></i><span><small>DROP</small><b id="requestDrop">No pending request</b></span></div></div><div class="load-summary"><span class="load-icon"><i data-lucide="package"></i></span><div><small>LOAD</small><b id="requestLoad">Waiting for customer</b></div><span>Live request</span></div><div class="request-actions"><button class="reject" id="rejectBtn">Reject</button><button class="accept" id="acceptBtn">Accept booking</button></div></article></section><section><div class="section-title"><h2>Recent trips</h2><button>View all</button></div><div class="recent-list"><article><span class="trip-icon">✓</span><div><b>Sector 7 → Infocity</b><small>Today, 10:24 AM · 5.2 km</small></div><strong>₹280</strong></article><article><span class="trip-icon">✓</span><div><b>Kudasan → Sargasan</b><small>Today, 9:10 AM · 3.7 km</small></div><strong>₹220</strong></article><article><span class="trip-icon">✓</span><div><b>Sector 21 → Pethapur</b><small>Yesterday, 6:44 PM · 8.1 km</small></div><strong>₹410</strong></article></div></section></div>
+        </div>
+      </section>
+      <section class="view utility-view" id="wallet-view">
+        <div class="utility-head"><div><span class="eyebrow"><span></span> PAYMENTS</span><h1>Wallet & balance</h1><p>Manage delivery payments, credits and transaction history.</p></div><button class="primary-btn compact" id="addMoneyBtn"><i data-lucide="credit-card"></i> Add card</button></div>
+        <div class="wallet-grid"><article class="balance-card"><small>AVAILABLE HAULR BALANCE</small><strong id="walletBalance">₹0.00</strong><p>Use your balance for faster checkout on every delivery.</p><div><span><i data-lucide="shield-check"></i> Secure balance</span><b>HAULR</b></div></article><article class="wallet-summary"><div><span><i data-lucide="receipt-indian-rupee"></i></span><p><small>TOTAL DELIVERY SPEND</small><b id="totalSpend">₹0</b></p></div><div><span><i data-lucide="package-check"></i></span><p><small>COMPLETED BOOKINGS</small><b id="completedCount">0</b></p></div><div><span><i data-lucide="circle-dollar-sign"></i></span><p><small>CASHBACK EARNED</small><b>₹0</b></p></div></article></div>
+        <section class="payment-methods-panel"><div class="section-title"><div><h2>Payment methods</h2><p>Cards are never stored on this server.</p></div><button id="walletAddCard">+ Add card</button></div><div class="method-list"><article id="upiMethod" role="button" tabindex="0"><span class="upi-mark">UPI</span><div><b>UPI payment</b><small id="upiMethodStatus">Pay using any UPI application</small></div><em>Set up <i data-lucide="chevron-right"></i></em></article><article id="cashMethod" role="button" tabindex="0"><span><i data-lucide="banknote"></i></span><div><b>Cash on delivery</b><small id="cashMethodStatus">Pay the driver after delivery</small></div><em id="cashMethodBadge">Details <i data-lucide="chevron-right"></i></em></article><article id="savedCardMethod" class="hidden"><span><i data-lucide="credit-card"></i></span><div><b id="savedCardTitle">Saved card</b><small>Available for this browser session</small></div><em>Ready</em></article></div></section>
+      </section>
+      <section class="view utility-view" id="settings-view">
+        <div class="utility-head"><div><span class="eyebrow"><span></span> ACCOUNT</span><h1>Settings</h1><p>Control your profile, delivery preferences and security.</p></div></div>
+        <div class="settings-app"><nav class="settings-bars"><button class="active" data-settings-page="profile"><span><i data-lucide="user-round"></i></span><div><b>Profile details</b><small>Name, email and mobile number</small></div><i data-lucide="chevron-right"></i></button><button data-settings-page="tracking"><span><i data-lucide="locate-fixed"></i></span><div><b>Track an order</b><small>Live route and vehicle position</small></div><i data-lucide="chevron-right"></i></button><button data-view="places"><span><i data-lucide="map-pinned"></i></span><div><b>Saved places</b><small>Addresses from your past deliveries</small></div><i data-lucide="chevron-right"></i></button><button data-settings-page="notifications"><span><i data-lucide="bell-ring"></i></span><div><b>Notifications</b><small>Delivery alerts and preferences</small></div><i data-lucide="chevron-right"></i></button><button data-settings-page="delivery"><span><i data-lucide="sliders-horizontal"></i></span><div><b>Delivery preferences</b><small>Locations, offers and updates</small></div><i data-lucide="chevron-right"></i></button><button data-settings-page="payments"><span><i data-lucide="wallet-cards"></i></span><div><b>Payments and balance</b><small>UPI, cards, cash and wallet</small></div><i data-lucide="chevron-right"></i></button><button data-settings-page="security"><span><i data-lucide="shield-check"></i></span><div><b>Security</b><small>Password and active sessions</small></div><i data-lucide="chevron-right"></i></button></nav><div class="settings-pages"><section class="settings-page active" data-settings-panel="profile"><div class="settings-page-head"><span><i data-lucide="user-round"></i></span><div><small>ACCOUNT</small><h2>Profile details</h2><p>Information connected to your Haulr account.</p></div></div><label>Full name<input id="settingsName" disabled placeholder="Sign in to view"></label><label>Email address<input id="settingsEmail" disabled placeholder="Sign in to view"></label><label>Mobile number<input id="settingsPhone" disabled placeholder="Sign in to view"></label></section><section class="settings-page" data-settings-panel="tracking"><div class="settings-page-head"><span><i data-lucide="locate-fixed"></i></span><div><small>LIVE DELIVERY</small><h2>Track an order</h2><p>View the exact saved route and latest vehicle position.</p></div></div><button class="settings-launch" id="settingsTrackOrder"><span><i data-lucide="scan-search"></i></span><div><b>Open live order tracking</b><small>Enter an HLR order number and follow its route.</small></div><i data-lucide="arrow-up-right"></i></button></section><section class="settings-page" data-settings-panel="notifications"><div class="settings-page-head"><span><i data-lucide="bell-ring"></i></span><div><small>ALERTS</small><h2>Notification settings</h2><p>Choose the account events you want to receive.</p></div></div><label class="setting-toggle"><span><b>Driver and trip updates</b><small>Assignment, pickup, transit and delivery alerts</small></span><input type="checkbox" checked><i></i></label><label class="setting-toggle"><span><b>Payment updates</b><small>Payment method and transaction alerts</small></span><input type="checkbox" checked><i></i></label><label class="setting-toggle"><span><b>Offers and rewards</b><small>Optional promotional notifications</small></span><input type="checkbox"><i></i></label></section><section class="settings-page" data-settings-panel="delivery"><div class="settings-page-head"><span><i data-lucide="sliders-horizontal"></i></span><div><small>PREFERENCES</small><h2>Delivery settings</h2><p>Control defaults for future bookings.</p></div></div><label class="setting-toggle"><span><b>Save recent locations</b><small>Speed up the next booking</small></span><input type="checkbox" checked><i></i></label><label class="setting-toggle"><span><b>Transit insurance</b><small>Include protection in fare estimates</small></span><input type="checkbox" checked><i></i></label></section><section class="settings-page" data-settings-panel="payments"><div class="settings-page-head"><span><i data-lucide="wallet-cards"></i></span><div><small>MONEY</small><h2>Payments and balance</h2><p>Manage saved payment methods and preferences.</p></div></div><button class="settings-launch" data-view="wallet"><span><i data-lucide="wallet"></i></span><div><b>Open wallet and payment methods</b><small>Manage UPI, cards, cash and Haulr balance.</small></div><i data-lucide="arrow-up-right"></i></button></section><section class="settings-page" data-settings-panel="security"><div class="settings-page-head"><span><i data-lucide="shield-check"></i></span><div><small>SECURITY</small><h2>Account security</h2><p>Manage password and signed-in devices.</p></div></div><button class="settings-launch"><span><i data-lucide="key-round"></i></span><div><b>Change password</b><small>Update your email account password.</small></div><i data-lucide="chevron-right"></i></button><button class="settings-launch"><span><i data-lucide="smartphone"></i></span><div><b>Active sessions</b><small>Review devices using this account.</small></div><i data-lucide="chevron-right"></i></button></section></div></div>
+      </section>
+      <section class="view utility-view" id="places-view">
+        <button type="button" class="page-back" id="placesBack"><i data-lucide="arrow-left"></i><span>Go back</span></button>
+        <div class="utility-head"><div><span class="eyebrow"><span></span> ADDRESS BOOK</span><h1>Saved places</h1><p>Addresses you have already delivered from or to. Pick one to drop it straight onto the booking map.</p></div><button class="primary-btn delivery-cta" data-view="booking"><i data-lucide="package-plus"></i><span>New delivery</span></button></div>
+        <div class="places-list" id="placesList"><div class="places-empty"><span><i data-lucide="map-pinned"></i></span><h2>No saved places yet</h2><p>Every pickup and drop address you book is remembered here automatically.</p></div></div>
+      </section>
+      <section class="view utility-view" id="support-view">
+        <div class="utility-head support-head"><div><span class="eyebrow"><span></span> HELP CENTRE</span><h1>Help & support</h1><p>Find answers for your delivery, payment or account. Our support team is available whenever you need help.</p></div></div>
+        <div class="support-home" id="supportHome">
+          <section class="support-contact"><span><i data-lucide="headphones"></i></span><div><small>NEED HELP NOW?</small><h2>We’re here for your delivery.</h2><p>Get help with a live order, payment or account question.</p></div><button type="button" data-help-topic="contact">Contact support <i data-lucide="arrow-right"></i></button></section>
+          <div class="support-topic-grid">
+            <button type="button" data-help-topic="booking"><span><i data-lucide="package-search"></i></span><div><b>Booking & delivery</b><small>Booking, driver, tracking and delivery updates</small></div><i data-lucide="chevron-right"></i></button>
+            <button type="button" data-help-topic="payments"><span><i data-lucide="wallet-cards"></i></span><div><b>Payments & refunds</b><small>UPI, cards, cash and payment confirmations</small></div><i data-lucide="chevron-right"></i></button>
+            <button type="button" data-help-topic="account"><span><i data-lucide="shield-check"></i></span><div><b>Account & security</b><small>Sign-in, saved places and account protection</small></div><i data-lucide="chevron-right"></i></button>
+          </div>
+        </div>
+        <section class="support-detail hidden" id="supportDetail" aria-live="polite"><button class="support-back" type="button" id="supportBack"><i data-lucide="arrow-left"></i> Help centre</button><div id="supportDetailContent"></div></section>
+      </section>
+      <section class="view utility-view" id="track-view"><div class="track-shell"><div class="track-hero"><span><i data-lucide="scan-search"></i></span><small>REAL-TIME ORDER LOOKUP</small><h1>Where is my delivery?</h1><p>Enter the order number from your confirmed booking. Only orders belonging to your signed-in account can be viewed.</p><form id="trackOrderForm"><div><b>HLR-</b><input id="trackOrderInput" inputmode="numeric" placeholder="0001" required><button type="submit"><i data-lucide="search"></i> Track order</button></div><small>Your order number appears in My Deliveries.</small></form></div><div id="trackResult" class="track-result"><span><i data-lucide="route"></i></span><h2>Ready to track</h2><p>Enter a valid Haulr order number to see its latest backend status.</p></div></div></section>
+    </main>
+    <nav class="mobile-nav" aria-label="Mobile navigation"><button class="active" data-view="home"><i data-lucide="house"></i><span>Main</span></button><button data-view="booking"><i data-lucide="package-plus"></i><span>Book</span></button><button data-view="orders"><i data-lucide="route"></i><span>Orders</span></button><button data-view="wallet"><i data-lucide="wallet-cards"></i><span>Balance</span></button><button data-view="settings"><i data-lucide="settings"></i><span>Settings</span></button></nav>
+  </div>
+  <div id="googleTranslateMount" aria-hidden="true"></div>
+  <div class="language-switch-overlay" id="languageSwitchOverlay" aria-hidden="true"><div><span><i data-lucide="languages"></i></span><small>LANGUAGE</small><b id="languageSwitchText">Updating language…</b><i></i></div></div>
+
+  <div class="toast" id="toast"><i>✓</i><div><b>Booking confirmed!</b><span>A verified driver is on the way.</span></div></div>
+  <div class="notification-overlay" id="notificationOverlay" aria-hidden="true">
+    <section class="notification-panel" id="notificationPanel" role="dialog" aria-modal="true" aria-labelledby="notificationPanelTitle"><button class="payment-close" id="notificationClose" aria-label="Close notifications">×</button><div class="notification-head"><div><small>ACCOUNT UPDATES</small><h2 id="notificationPanelTitle">Notifications</h2></div><button id="markNotificationsRead">Mark all read</button></div><div class="notification-list" id="notificationList"><div class="notification-empty"><i data-lucide="bell-ring"></i><b>No notifications</b><span>Booking and delivery updates will appear here.</span></div></div></section>
+  </div>
+  <div class="payment-overlay" id="paymentOverlay" aria-hidden="true">
+    <section class="payment-sheet" role="dialog" aria-modal="true" aria-labelledby="paymentTitle">
+      <button class="payment-close" id="paymentClose" aria-label="Close payment">×</button>
+      <div class="payment-heading"><span><i data-lucide="shield-check"></i></span><div><small>CARD CHECKOUT</small><h2 id="paymentTitle">Add a payment card</h2><p>Your card details stay in this browser and are never stored.</p></div></div>
+      <div class="card-type-switch"><label><input type="radio" name="cardType" value="Debit" checked><span><i data-lucide="landmark"></i> Debit card</span></label><label><input type="radio" name="cardType" value="Credit"><span><i data-lucide="credit-card"></i> Credit card</span></label></div>
+      <div class="accepted-cards"><small>ACCEPTED CARDS</small><div><span data-brand-logo="VISA"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Visa_2021.svg" alt="Visa"></span><span data-brand-logo="MASTERCARD"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Mastercard-logo.svg" alt="Mastercard"></span><span data-brand-logo="RUPAY"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/RuPay.svg" alt="RuPay"></span><span data-brand-logo="AMEX"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/American_Express_logo_(2018).svg" alt="American Express"></span></div></div>
+      <div class="bank-card-title"><div><small>SELECT YOUR BANK CARD</small><span>Choose the issuer printed on your ATM card</span></div><button id="toggleBanks" type="button">View all</button></div>
+      <label class="bank-search" id="bankSearchWrap"><i data-lucide="search"></i><input id="bankSearch" type="search" placeholder="Search Indian banks" autocomplete="off"><span id="bankCount"></span></label>
+      <div class="bank-card-options" id="bankCardOptions">
+        <label><input type="radio" name="bankIssuer" value="SBI" checked><span><img src="https://icons.duckduckgo.com/ip3/sbi.co.in.ico" alt="SBI"><b>SBI</b><small>ATM / Debit</small><i data-lucide="check"></i></span></label>
+        <label><input type="radio" name="bankIssuer" value="HDFC"><span><img src="https://icons.duckduckgo.com/ip3/hdfcbank.com.ico" alt="HDFC"><b>HDFC</b><small>Debit / Credit</small><i data-lucide="check"></i></span></label>
+        <label><input type="radio" name="bankIssuer" value="ICICI"><span><img src="https://icons.duckduckgo.com/ip3/icicibank.com.ico" alt="ICICI"><b>ICICI</b><small>Debit / Credit</small><i data-lucide="check"></i></span></label>
+        <label><input type="radio" name="bankIssuer" value="Axis"><span><img src="https://icons.duckduckgo.com/ip3/axisbank.com.ico" alt="Axis"><b>Axis</b><small>ATM / Debit</small><i data-lucide="check"></i></span></label>
+        <label class="extra-bank"><input type="radio" name="bankIssuer" value="Kotak"><span><img src="https://icons.duckduckgo.com/ip3/kotak.com.ico" alt="Kotak"><b>Kotak</b><small>Debit / Credit</small><i data-lucide="check"></i></span></label>
+        <label class="extra-bank"><input type="radio" name="bankIssuer" value="Other bank"><span class="other-bank-icon"><i data-lucide="landmark"></i><b>Other</b><small>Any Indian bank</small><i data-lucide="check"></i></span></label>
+      </div>
+      <div class="virtual-card" id="virtualCard"><span class="virtual-bank" id="virtualBank">SBI</span><img class="virtual-network" id="virtualNetwork" alt=""><div class="card-chip"></div><i data-lucide="contactless"></i><strong id="cardPreview">•••• &nbsp;•••• &nbsp;•••• &nbsp;••••</strong><div><span id="namePreview">CARDHOLDER NAME</span><span id="expiryPreview">MM/YY</span></div></div>
+      <form id="cardForm" novalidate>
+        <label>Cardholder name<div class="payment-field"><i data-lucide="user"></i><input id="cardName" autocomplete="cc-name" placeholder="Name on card" required></div></label>
+        <label>Card number<div class="payment-field"><i data-lucide="credit-card"></i><input id="cardNumber" inputmode="numeric" autocomplete="cc-number" maxlength="19" placeholder="1234 5678 9012 3456" required><span id="cardBrand">CARD</span></div></label>
+        <div class="payment-row"><label>Expiry<div class="payment-field"><i data-lucide="calendar"></i><input id="cardExpiry" inputmode="numeric" autocomplete="cc-exp" maxlength="5" placeholder="MM/YY" required></div></label><label>CVV<div class="payment-field"><i data-lucide="lock-keyhole"></i><input id="cardCvv" type="password" inputmode="numeric" autocomplete="cc-csc" maxlength="4" placeholder="•••" required></div></label></div>
+        <p class="card-error" id="cardError"></p>
+        <button class="primary-btn payment-save" type="submit"><i data-lucide="lock"></i> Use this card</button>
+      </form>
+      <div class="payment-security"><span><i data-lucide="shield"></i> Validated locally</span><span><i data-lucide="database-zap"></i> Card data not stored</span></div>
+    </section>
+  </div>
+  <div class="other-overlay" id="otherOverlay" aria-hidden="true">
+    <section class="other-sheet" role="dialog" aria-modal="true" aria-labelledby="otherTitle">
+      <button class="payment-close" id="otherClose" aria-label="Close">×</button>
+      <div class="other-heading"><span><i data-lucide="package-search"></i></span><div><small>CUSTOM LOAD</small><h2 id="otherTitle">What are you sending?</h2><p>Tell the driver exactly what needs to be transported.</p></div></div>
+      <div class="other-suggestions"><button type="button">Machinery</button><button type="button">Event supplies</button><button type="button">Plants</button><button type="button">Documents</button><button type="button">Bicycle</button><button type="button">Textiles</button></div>
+      <form id="otherLoadForm">
+        <label>Item or load name<div class="payment-field"><i data-lucide="package"></i><input id="otherLoadName" maxlength="50" placeholder="e.g. Industrial sewing machine" required></div></label>
+        <label>Additional handling instructions<textarea id="otherInstructions" maxlength="180" placeholder="Fragile, keep upright, entrance details, etc."></textarea></label>
+        <div class="other-char-count"><span>Be specific to help your driver prepare</span><b id="otherCharCount">0/180</b></div>
+        <button class="primary-btn" type="submit">Save load details <span>→</span></button>
+      </form>
+    </section>
+  </div>
+  <div class="auth-overlay" id="authOverlay" aria-hidden="true">
+    <section class="auth-sheet" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="payment-close" id="authClose" aria-label="Close">×</button>
+      <div class="auth-brand"><span class="brand-mark"><span></span><span></span></span><div><small>WELCOME TO HAULR</small><h2 id="authTitle">Sign in to continue</h2><p>Your bookings and delivery history, securely in one place.</p></div></div>
+      <div class="auth-tabs"><button class="active" type="button" data-auth-tab="login">Sign in</button><button type="button" data-auth-tab="register">Create account</button></div>
+      <div id="googleButtonHost" class="google-button-host"></div><a class="google-auth-btn hidden" id="googleAuthBtn" href="/api/auth/google/start"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.09-1.93 3.27-4.77 3.27-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.24 1.06-3.71 1.06-2.86 0-5.29-1.94-6.16-4.54H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.09A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.43.34-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.77.42 3.44 1.18 4.93l3.66-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.2 1.64l3.15-3.15A10.55 10.55 0 0 0 12 1 11 11 0 0 0 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53Z"/></svg><span>Continue with Google</span></a>
+      <div class="auth-divider" id="googleAuthDivider"><span>or continue with email</span></div>
+      <form class="auth-form active" id="loginForm" data-auth-form="login">
+        <label>Email address<div class="payment-field"><i data-lucide="mail"></i><input type="email" id="loginEmail" autocomplete="email" required placeholder="you@example.com"></div></label>
+        <label>Password<div class="payment-field"><i data-lucide="lock"></i><input type="password" id="loginPassword" autocomplete="current-password" required placeholder="Your password"></div></label>
+        <p class="auth-error" id="loginError"></p><button class="primary-btn" type="submit">Sign in <span>→</span></button>
+      </form>
+      <form class="auth-form" id="registerForm" data-auth-form="register">
+        <label>Full name<div class="payment-field"><i data-lucide="user"></i><input id="registerName" autocomplete="name" required placeholder="Your full name"></div></label>
+        <label>Email address<div class="payment-field"><i data-lucide="mail"></i><input type="email" id="registerEmail" autocomplete="email" required placeholder="you@example.com"></div></label>
+        <label>Mobile number<div class="payment-field"><i data-lucide="phone"></i><input id="registerPhone" inputmode="tel" autocomplete="tel" required placeholder="+91 98765 43210"></div></label>
+        <label>Password<div class="payment-field"><i data-lucide="lock"></i><input type="password" id="registerPassword" minlength="8" autocomplete="new-password" required placeholder="Minimum 8 characters"></div></label>
+        <p class="auth-error" id="registerError"></p><button class="primary-btn" type="submit">Create my account <span>→</span></button>
+      </form>
+    </section>
+  </div>
+  <div class="method-overlay" id="methodOverlay" aria-hidden="true">
+    <section class="method-sheet" role="dialog" aria-modal="true">
+      <button class="payment-close" id="methodClose" aria-label="Close">×</button>
+      <div class="method-screen" id="upiScreen"><div class="method-screen-head"><span class="upi-large" id="selectedUpiMark">UPI</span><div><small>PAYMENT METHOD</small><h2 id="upiSetupTitle">Choose your UPI app</h2><p>Select the application connected to your UPI ID.</p></div></div><div class="upi-apps"><button type="button" class="gpay" data-upi-app="Google Pay" data-upi-handle="okaxis"><b>G</b><span>Google Pay</span><i data-lucide="check"></i></button><button type="button" class="phonepe" data-upi-app="PhonePe" data-upi-handle="ybl"><b>पे</b><span>PhonePe</span><i data-lucide="check"></i></button><button type="button" class="paytm" data-upi-app="Paytm" data-upi-handle="paytm"><b>Pay</b><span>Paytm</span><i data-lucide="check"></i></button><button type="button" class="bhim" data-upi-app="BHIM" data-upi-handle="upi"><b>BHIM</b><span>BHIM UPI</span><i data-lucide="check"></i></button><button type="button" class="other-upi" data-upi-app="Other UPI" data-upi-handle="bank"><b>UPI</b><span>Other app</span><i data-lucide="check"></i></button></div><form id="upiForm"><label>UPI ID for <b id="selectedUpiName">your app</b><div class="payment-field"><i data-lucide="at-sign"></i><input id="upiId" autocomplete="off" placeholder="name@bank" required></div></label><p class="card-error" id="upiError"></p><button class="primary-btn" type="submit">Verify and save UPI <span>→</span></button></form><div class="method-note"><i data-lucide="shield-check"></i><span>Haulr stores only the UPI ID, never your UPI PIN. Enter your PIN only inside your UPI application.</span></div></div>
+      <div class="method-screen upi-success-screen" id="upiSuccessScreen"><span class="success-ring"><i data-lucide="check"></i></span><small>PAYMENT METHOD SAVED</small><h2 id="upiSuccessTitle">UPI added successfully</h2><p>Your payment method is ready for delivery checkout.</p><div class="saved-upi-card"><span id="successUpiMark">UPI</span><div><small id="successUpiProvider">UPI application</small><b id="successUpiId">name@bank</b></div><i data-lucide="badge-check"></i></div><button class="primary-btn" id="upiSuccessDone" type="button">Done <span>→</span></button></div>
+      <div class="method-screen" id="cashScreen"><div class="method-screen-head"><span class="cash-large"><i data-lucide="banknote"></i></span><div><small>PAYMENT METHOD</small><h2>Cash on delivery</h2><p>Pay the verified driver when your goods reach the destination.</p></div></div><div class="cash-steps"><div><span>1</span><p><b>Book your delivery</b><small>Select Cash during checkout.</small></p></div><div><span>2</span><p><b>Track the trip</b><small>Follow the delivery status in your account.</small></p></div><div><span>3</span><p><b>Pay after delivery</b><small>Collect a payment confirmation from the driver.</small></p></div></div><label class="cash-default"><span><b>Use Cash as my preferred method</b><small>You can change this during every booking.</small></span><input id="cashDefault" type="checkbox"><i></i></label><button class="primary-btn" id="saveCashPreference" type="button">Save preference <span>→</span></button></div>
+    </section>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="app.js"></script>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>
