@@ -974,6 +974,24 @@ body,.app-shell,.app-main{background:var(--paper)!important;color:var(--ink)}
 .network-marquee svg{color:#6856D9!important}
 .graph-legend,#graphSummary{color:#6856D9!important;background:#F2F0FF!important;border-color:#DCD6F6!important}
 
+/* Final mobile-nav surface: light liquid glass instead of the opaque dark-white bar. */
+@media(max-width:900px){
+  .mobile-nav{
+    background:linear-gradient(135deg,rgba(250,250,255,.64),rgba(238,234,254,.34))!important;
+    border-color:rgba(255,255,255,.88)!important;
+    box-shadow:0 16px 38px rgba(40,32,90,.15),inset 0 1px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(104,86,217,.12)!important;
+    backdrop-filter:blur(14px) saturate(135%)!important;
+    -webkit-backdrop-filter:blur(14px) saturate(135%)!important;
+  }
+  .mobile-nav:before{
+    background:linear-gradient(130deg,rgba(255,255,255,.72),rgba(216,209,250,.55),rgba(255,255,255,.64))!important;
+    border:1px solid rgba(255,255,255,.86)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 6px 15px rgba(40,32,90,.13)!important;
+    backdrop-filter:blur(8px) saturate(130%)!important;
+    -webkit-backdrop-filter:blur(8px) saturate(130%)!important;
+  }
+}
+
 /* Shipment bars: icon, name, status and fare all share one row. */
 .real-order-item{grid-template-columns:32px minmax(0,1fr) auto auto;align-items:center}
 .real-order-item>span{grid-row:auto}
