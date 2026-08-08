@@ -448,7 +448,7 @@ function initMaps() {
   L.control.zoom({ position: 'bottomright' }).addTo(bookingMap);
   pickupMarker = L.marker(pickupPoint, { icon: pinIcon(), draggable: true }).addTo(bookingMap).bindPopup('Pickup · Sector 21');
   dropMarker = L.marker(dropPoint, { icon: pinIcon('drop'), draggable: true }).addTo(bookingMap).bindPopup('Drop · Railway Station Road');
-  bookingRoute = L.polyline([pickupPoint, dropPoint], { color: '#125f46', weight: 4, opacity: .88 }).addTo(bookingMap);
+  bookingRoute = L.polyline([pickupPoint, dropPoint], { color: '#6856D9', weight: 4, opacity: .88 }).addTo(bookingMap);
   pickupMarker.on('dragend', () => markerMoved('pickup'));
   dropMarker.on('dragend', () => markerMoved('drop'));
   bookingMap.on('click', event => {
@@ -481,7 +481,7 @@ function initMaps() {
   L.tileLayer(mapTileUrl,mapTileOptions).addTo(liveMap);
   const routePoints = [pickupPoint, [23.2228,72.646], [23.2208,72.642], [23.2184,72.639], dropPoint];
   L.polyline(routePoints, { color: '#fff', weight: 9, opacity: .95 }).addTo(liveMap);
-  L.polyline(routePoints, { color: '#125f46', weight: 5, opacity: 1 }).addTo(liveMap);
+  L.polyline(routePoints, { color: '#6856D9', weight: 5, opacity: 1 }).addTo(liveMap);
   L.marker(pickupPoint, { icon: pinIcon() }).addTo(liveMap).bindPopup('Pickup completed');
   L.marker(dropPoint, { icon: pinIcon('drop') }).addTo(liveMap).bindPopup('Delivery destination');
   const vehicleIcon = L.divIcon({ className: '', html: '<div class="vehicle-marker"><svg viewBox="0 0 24 24"><path d="M10 17h4V5H2v12h3m14 0h3v-5l-3-4h-5v9h1M7.5 20a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm10 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg></div>', iconSize: [42,42], iconAnchor: [21,21] });
@@ -752,7 +752,7 @@ function renderSpendDonut(bookings) {
   }).join('');
   const legend = merged.map((slice, index) => `<li><i style="background:${spendRamp[index]}"></i><b>${safe(slice.label)}</b><em>₹${slice.value}</em></li>`).join('');
   shell.innerHTML = `<svg viewBox="0 0 140 140" role="img" aria-label="Delivery spend split by vehicle type">
-      <circle cx="70" cy="70" r="${radius}" fill="none" stroke="#eef4f0" stroke-width="${thickness}"></circle>
+      <circle cx="70" cy="70" r="${radius}" fill="none" stroke="#E4E0FA" stroke-width="${thickness}"></circle>
       <g transform="rotate(-90 70 70)">${arcs}</g>
       <text class="donut-total" x="70" y="68" text-anchor="middle">₹${total}</text>
       <text class="donut-caption" x="70" y="82" text-anchor="middle">${totalSpendCaption()}</text>
