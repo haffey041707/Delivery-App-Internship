@@ -731,7 +731,7 @@ function renderSpendDonut(bookings) {
   // The ring always draws, so the graph is visible before any delivery exists.
   if (!total) {
     shell.innerHTML = `<svg viewBox="0 0 140 140" role="img" aria-label="No delivery spend recorded yet">
-        <circle cx="70" cy="70" r="52" fill="none" stroke="#dceee4" stroke-width="16"></circle>
+        <circle cx="70" cy="70" r="52" fill="none" stroke="#E4E0FA" stroke-width="16"></circle>
         <text class="donut-total" x="70" y="68" text-anchor="middle">₹0</text>
         <text class="donut-caption" x="70" y="82" text-anchor="middle">${totalSpendCaption()}</text>
       </svg>`;
