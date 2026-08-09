@@ -848,7 +848,9 @@ const settingsApp=document.querySelector('.settings-app');
 // until the customer deliberately opens one.
 document.querySelector('[data-settings-page="profile"]')?.classList.remove('active');
 function activateSettingsPage(page, {openDetail = true} = {}) {
-  const buttons = [...document.querySelectorAll('[data-settings-page]')];
+  // Include Saved places as well: it opens a separate view but still belongs
+  // to this one-choice settings menu.
+  const buttons = [...document.querySelectorAll('.settings-bars button')];
   const selected = buttons.find(item => item.dataset.settingsPage === page);
   // Explicit removal avoids stale visual states on touch browsers.
   buttons.forEach(item => item.classList.remove('active'));
