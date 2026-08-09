@@ -773,6 +773,12 @@ function renderCustomerDashboard(bookings) {
   const dashboardBookings=bookings.length ? bookings : dashboardActivitySnapshot;
   const active=dashboardBookings.filter(item=>['searching','accepted','pickup','in_transit'].includes(item.status)).length;
   const spend=dashboardBookings.reduce((total,item)=>total+Number(item.fare||0),0);
+  const firstBooking=dashboardBookings.map(item=>new Date(item.created_at).getTime()).filter(Number.isFinite).sort((a,b)=>a-b)[0];
+  const days=firstBooking ? Math.max(1,Math.ceil((Date.now()-firstBooking)/86400000)) : 1;
+  const daysValue=document.getElementById('daysWithHaulr');
+  const daysRing=document.querySelector('.days-dial-progress');
+  if(daysValue) daysValue.textContent=days;
+  if(daysRing){const circumference=2*Math.PI*52; daysRing.style.strokeDasharray=`${circumference}`; daysRing.style.strokeDashoffset=`${circumference*(1-Math.min(days,30)/30)}`;}
   document.getElementById('dashTotal').textContent=dashboardBookings.length;
   document.getElementById('jarvisValue').textContent=active;
   document.getElementById('jarvisLabel').textContent=active===1?'Active delivery':'Active deliveries';
