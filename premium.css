@@ -1047,6 +1047,38 @@ body,.app-shell,.app-main{background:var(--paper)!important;color:var(--ink)}
 .jarvis-feed span{width:100%!important;min-width:0!important;box-sizing:border-box!important;justify-content:center!important;padding:8px 5px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 @media(max-width:560px){.jarvis-feed{left:0!important;right:0!important;width:210px!important;max-width:calc(100% - 32px)!important;margin-left:auto!important;margin-right:auto!important;transform:none!important;gap:7px!important}.jarvis-feed span{padding:7px 4px!important;font-size:6px!important}}
 
+/* Real phone layout: dashboard panels become a readable vertical flow instead
+   of four squeezed desktop squares. */
+@media(max-width:600px){
+  .main-dashboard{padding:18px 15px 92px!important}
+  .main-insights{display:grid!important;grid-template-columns:1fr!important;gap:14px!important;margin:16px auto!important}
+  .insight-column,.system-side{display:grid!important;grid-template-columns:1fr!important;grid-template-rows:auto!important;max-width:none!important;margin:0!important;gap:14px!important}
+  .activity-graph,.jarvis-core,.compact-metrics,.days-card{width:100%!important;min-width:0!important;aspect-ratio:auto!important;box-sizing:border-box!important}
+  .activity-graph{min-height:274px!important;padding:18px!important}
+  .activity-graph .section-title h2{font-size:16px!important}
+  .donut-shell{min-height:202px!important;flex-direction:row!important;justify-content:center!important;gap:15px!important}
+  .donut-shell svg{width:min(43vw,166px)!important;max-width:166px!important}
+  .donut-legend{max-width:128px!important;gap:7px!important}
+  .donut-legend b,.donut-legend em{font-size:9px!important}
+  .jarvis-core{min-height:288px!important;padding:18px!important}
+  .jarvis-v2{min-height:250px!important;gap:18px!important}
+  .jarvis-v2-dial{width:184px!important;max-width:72vw!important}
+  .jarvis-v2-readout small{font-size:7px!important}
+  .jarvis-v2-readout strong{font-size:28px!important}
+  .jarvis-v2-readout span{font-size:9px!important}
+  .jarvis-v2-footer{font-size:7px!important}
+  .compact-metrics{display:block!important;height:auto!important;min-height:190px!important}
+  .compact-metrics article{height:190px!important;min-height:190px!important;padding:18px!important}
+  .compact-metrics article>div:nth-child(2) strong{font-size:36px!important}
+  .days-card{min-height:252px!important;padding:18px!important}
+  .days-card .section-title h2{font-size:16px!important}
+  .days-dial{justify-content:center!important;min-height:175px!important}
+  .days-dial svg{width:166px!important;max-width:70%!important}
+  .days-dial-value{font-size:22px!important}
+  .days-dial-label{font-size:7px!important}
+  .recent-real{margin-bottom:10px!important}
+}
+
 /* Successful entry-account feedback is green; only errors use red. */
 .entry-form .auth-error.auth-success{color:#137654!important;background:#E8F6EF!important}
 
