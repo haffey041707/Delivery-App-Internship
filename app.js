@@ -832,6 +832,17 @@ async function buildInlineOrderMap(order){
 }
 
 const settingsApp=document.querySelector('.settings-app');
+function activateSettingsPage(page, {openDetail = true} = {}) {
+  const buttons = [...document.querySelectorAll('[data-settings-page]')];
+  const selected = buttons.find(item => item.dataset.settingsPage === page);
+  // Explicit removal avoids stale visual states on touch browsers.
+  buttons.forEach(item => item.classList.remove('active'));
+  selected?.classList.add('active');
+  document.querySelectorAll('[data-settings-panel]').forEach(panel => {
+    panel.classList.toggle('active', panel.dataset.settingsPanel === page);
+  });
+  settingsApp?.classList.toggle('detail-open', openDetail);
+}
 document.querySelector('[data-settings-page="payments"]')?.remove();
 document.querySelector('[data-settings-panel="payments"]')?.remove();
 document.querySelectorAll('[data-settings-panel]').forEach(panel=>panel.insertAdjacentHTML('afterbegin','<button type="button" class="settings-back"><i data-lucide="arrow-left"></i><span>Back to settings</span></button>'));
@@ -841,15 +852,11 @@ document.getElementById('placesBack')?.addEventListener('click',()=>showView(pre
 document.getElementById('trackPageBack')?.addEventListener('click',()=>{
   showView(previousView||'settings');
   if(currentView!=='settings')return;
-  document.querySelectorAll('[data-settings-page]').forEach(item=>item.classList.toggle('active',item.dataset.settingsPage==='tracking'));
-  document.querySelectorAll('[data-settings-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.settingsPanel==='tracking'));
-  settingsApp?.classList.remove('detail-open');
+  activateSettingsPage('tracking',{openDetail:false});
 });
 document.querySelectorAll('[data-settings-page]').forEach(button=>button.addEventListener('click',()=>{
   const page=button.dataset.settingsPage;
-  document.querySelectorAll('[data-settings-page]').forEach(item=>item.classList.toggle('active',item===button));
-  document.querySelectorAll('[data-settings-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.settingsPanel===page));
-  settingsApp?.classList.add('detail-open');
+  activateSettingsPage(page);
   if(window.lucide)lucide.createIcons();
 }));
 const securityPanel=document.querySelector('[data-settings-panel="security"]');
@@ -1320,8 +1327,7 @@ if (jarvisCore && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 document.querySelectorAll('[data-settings-open]').forEach(button => button.addEventListener('click', () => {
   const page = button.dataset.settingsOpen;
   showView('settings');
-  document.querySelectorAll('[data-settings-page]').forEach(item => item.classList.toggle('active', item.dataset.settingsPage === page));
-  document.querySelectorAll('[data-settings-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.settingsPanel === page));
+  activateSettingsPage(page);
   document.querySelectorAll('.customer-nav button').forEach(item => item.classList.toggle('active', item === button));
   settingsApp?.classList.add('detail-open');
   if (window.lucide) lucide.createIcons();

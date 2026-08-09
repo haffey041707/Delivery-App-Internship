@@ -985,6 +985,9 @@ body,.app-shell,.app-main{background:var(--paper)!important;color:var(--ink)}
 .settings-bars button.active{background:#EEEAFE;color:#28205A}
 .settings-bars button.active>span{background:#6856D9;color:#fff;box-shadow:0 5px 14px rgba(104,86,217,.35)}
 .settings-bars button.active>svg{color:#6856D9}
+/* Only the current settings row may carry a full-width violet selection surface. */
+.settings-bars button:not(.active){background:transparent!important;box-shadow:none!important}
+.settings-bars button:not(.active)>span{box-shadow:none!important}
 
 /* Production palette guard: saved places and legacy interaction states must stay
    in the Royal Indigo palette rather than inheriting the former green theme. */
