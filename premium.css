@@ -1097,9 +1097,9 @@ body,.app-shell,.app-main{background:var(--paper)!important;color:var(--ink)}
 /* Booking-map controls: a deliberate right-side stack on phones, never
    overlapping the map expand action or the attribution/badge. */
 @media(max-width:560px){
-  .booking-map-wrap .map-actions{top:12px!important;right:12px!important;z-index:950!important}
+  .booking-map-wrap .map-actions{top:18px!important;right:18px!important;z-index:950!important}
   .booking-map-wrap .map-expand{width:34px!important;height:34px!important;min-width:34px!important;border-radius:10px!important}
-  #bookingMap .leaflet-bottom.leaflet-right{top:54px!important;bottom:auto!important;right:12px!important}
+  #bookingMap .leaflet-bottom.leaflet-right{top:60px!important;bottom:auto!important;right:18px!important}
   #bookingMap .leaflet-control-zoom{margin:0!important;border-radius:10px!important;overflow:hidden!important;box-shadow:0 8px 20px rgba(40,32,90,.18)!important}
   #bookingMap .leaflet-control-zoom a{width:34px!important;height:34px!important;line-height:32px!important;font-size:20px!important}
 }
