@@ -1383,6 +1383,15 @@ let googleButtonRendered = false;
 async function initGoogleIdentity() {
   const host = document.getElementById('googleButtonHost');
   if (!host || googleButtonRendered) return;
+  // Use the server OAuth flow for every production login.  Google Identity's
+  // embedded token callback can be blocked by browser privacy settings and
+  // produces a misleading “could not reach the server” message after account
+  // selection.  The regular button below sends users to /api/auth/google/start,
+  // where the verified Vercel callback finishes the login securely.
+  document.getElementById('googleAuthBtn')?.classList.remove('hidden');
+  host.replaceChildren();
+  googleButtonRendered = true;
+  return;
   let config;
   try {
     const response = await fetch('/api/auth/google/status');
