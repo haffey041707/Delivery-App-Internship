@@ -1091,6 +1091,16 @@ body,.app-shell,.app-main{background:var(--paper)!important;color:var(--ink)}
   .payment-row{gap:9px!important}.payment-field{min-width:0!important}.payment-security{gap:9px!important;flex-wrap:wrap!important}
 }
 
+/* Booking-map controls: a deliberate right-side stack on phones, never
+   overlapping the map expand action or the attribution/badge. */
+@media(max-width:560px){
+  .booking-map-wrap .map-actions{top:12px!important;right:12px!important;z-index:950!important}
+  .booking-map-wrap .map-expand{width:34px!important;height:34px!important;min-width:34px!important;border-radius:10px!important}
+  #bookingMap .leaflet-bottom.leaflet-right{top:54px!important;bottom:auto!important;right:12px!important}
+  #bookingMap .leaflet-control-zoom{margin:0!important;border-radius:10px!important;overflow:hidden!important;box-shadow:0 8px 20px rgba(40,32,90,.18)!important}
+  #bookingMap .leaflet-control-zoom a{width:34px!important;height:34px!important;line-height:32px!important;font-size:20px!important}
+}
+
 /* Successful entry-account feedback is green; only errors use red. */
 .entry-form .auth-error.auth-success{color:#137654!important;background:#E8F6EF!important}
 
