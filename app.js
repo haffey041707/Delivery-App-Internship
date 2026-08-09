@@ -35,6 +35,18 @@ function showView(name) {
 
 document.querySelectorAll('[data-view]').forEach(button => {
   button.addEventListener('click', () => {
+    // Settings rows use the same single selection state as the rest of the app.
+    // Opening Settings itself must not leave Profile selected by default.
+    if (button.dataset.view === 'settings' && button.closest('.mobile-nav')) {
+      document.querySelectorAll('.settings-bars button').forEach(item => item.classList.remove('active'));
+      settingsApp?.classList.remove('detail-open');
+    }
+    // Saved places is a settings row with its own view, so mark it before opening.
+    if (button.dataset.view === 'places' && button.closest('.settings-bars')) {
+      document.querySelectorAll('.settings-bars button').forEach(item => item.classList.remove('active'));
+      button.classList.add('active');
+      settingsApp?.classList.remove('detail-open');
+    }
     if (button.dataset.view === 'booking') {
       bookingFlowSource = null;
       document.getElementById('savedRouteNotice')?.classList.add('hidden');
@@ -832,6 +844,9 @@ async function buildInlineOrderMap(order){
 }
 
 const settingsApp=document.querySelector('.settings-app');
+// The first settings page is visible in the markup, but no row is selected
+// until the customer deliberately opens one.
+document.querySelector('[data-settings-page="profile"]')?.classList.remove('active');
 function activateSettingsPage(page, {openDetail = true} = {}) {
   const buttons = [...document.querySelectorAll('[data-settings-page]')];
   const selected = buttons.find(item => item.dataset.settingsPage === page);
