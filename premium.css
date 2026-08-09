@@ -778,7 +778,20 @@ iframe.skiptranslate,iframe.goog-te-banner-frame,.goog-te-banner-frame,[class*="
   .days-card{display:flex;flex-direction:column;box-sizing:border-box!important}
   .days-dial{flex:1;align-items:center}
 }
-@media(max-width:900px){.days-card{margin-top:12px}.days-dial{justify-content:center}.days-dial p{max-width:190px}.compact-metrics article{min-height:150px}}
+@media(max-width:900px){
+  /* The second dashboard row matches the two square cards above it. */
+  .system-side{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:1fr!important;gap:12px!important}
+  .compact-metrics,.days-card{margin:0!important;aspect-ratio:1/1!important;min-width:0!important}
+  .compact-metrics{display:block!important;height:auto!important;max-width:none!important}
+  .compact-metrics article{height:100%!important;min-height:0!important;box-sizing:border-box!important;padding:15px!important;justify-content:space-between!important;border:1.5px solid rgba(104,86,217,.62)!important;border-radius:13px!important}
+  .compact-metrics article>*{padding-left:0!important;padding-right:0!important}
+  .compact-metrics .metric-top{padding-top:0!important}
+  .compact-metrics article>div:nth-child(2){padding-top:0!important;padding-bottom:0!important}
+  .compact-metrics article>div:nth-child(2) p{display:block!important;white-space:normal!important}
+  .days-card{display:flex!important;flex-direction:column!important;padding:15px!important;box-sizing:border-box!important}
+  .days-dial{flex:1!important;justify-content:center!important;align-items:center!important;margin-top:8px!important;padding-top:8px!important}
+  .days-dial svg{width:min(92px,48%)!important}.days-dial p{display:none!important}
+}
 
 /* Compact map controls with comfortable icon clearance. */
 .map-actions{right:12px!important;top:12px!important}
