@@ -21,7 +21,9 @@ from flask import Flask, jsonify, request, send_from_directory, session, redirec
 from werkzeug.security import check_password_hash, generate_password_hash
 
 ROOT = Path(__file__).resolve().parent
-DATABASE = ROOT / "haulr.db"
+# Vercel mounts the deployed project as read-only.  Its /tmp directory is the
+# writable runtime location, while local development continues to use haulr.db.
+DATABASE = Path("/tmp/haulr.db") if os.environ.get("VERCEL") else ROOT / "haulr.db"
 
 
 def load_env_file() -> None:
@@ -117,6 +119,12 @@ def init_database() -> None:
         }.items():
             if name not in existing:
                 db.execute(f"ALTER TABLE bookings ADD COLUMN {name} {definition}")
+
+
+# Serverless imports do not execute the __main__ block below, so initialise the
+# writable Vercel database as soon as the function module is loaded.
+if os.environ.get("VERCEL"):
+    init_database()
 
 
 def booking_dict(row: sqlite3.Row) -> dict:
