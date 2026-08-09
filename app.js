@@ -962,10 +962,35 @@ function closeAuth() { authOverlay.classList.remove('open'); authOverlay.setAttr
 document.getElementById('accountBtn').addEventListener('click', event => { event.stopPropagation(); accountMenu.classList.toggle('open'); });
 document.addEventListener('click', event => { if (!event.target.closest('.account-wrap')) accountMenu.classList.remove('open'); });
 document.getElementById('profileAction').addEventListener('click', openAuth);
+function showEntryPage(page){
+  entryGate?.querySelectorAll('[data-entry-page]').forEach(item=>item.classList.toggle('hidden',item.dataset.entryPage!==page));
+  if(window.lucide)lucide.createIcons();
+}
 document.querySelectorAll('[data-entry-auth]').forEach(button=>button.addEventListener('click',()=>{
+  if(entryGate && !entryGate.classList.contains('hidden')){showEntryPage(button.dataset.entryAuth);return;}
   openAuth();
   document.querySelector(`[data-auth-tab="${button.dataset.entryAuth}"]`)?.click();
 }));
+document.querySelectorAll('[data-entry-back]').forEach(button=>button.addEventListener('click',()=>showEntryPage('start')));
+async function entryAuthRequest(path,payload,errorId){
+  const error=document.getElementById(errorId);error.textContent='';
+  try{
+    const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await response.json();
+    if(!response.ok){error.textContent=data.error||'Unable to continue.';return;}
+    if(data.requires_login){
+      document.getElementById('entryLoginEmail').value=data.email;
+      document.getElementById('entryLoginPassword').value='';
+      showEntryPage('login');
+      document.getElementById('entryLoginError').textContent='Account created. Sign in with your password.';
+      document.getElementById('entryLoginPassword').focus();
+      return;
+    }
+    renderAccount(data);loadLatestBooking();
+  }catch(_){error.textContent='Unable to reach Haulr right now.';}
+}
+document.getElementById('entryLoginForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/login',{email:document.getElementById('entryLoginEmail').value,password:document.getElementById('entryLoginPassword').value},'entryLoginError');});
+document.getElementById('entryRegisterForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/register',{name:document.getElementById('entryRegisterName').value,email:document.getElementById('entryRegisterEmail').value,phone:document.getElementById('entryRegisterPhone').value,password:document.getElementById('entryRegisterPassword').value},'entryRegisterError');});
 document.getElementById('googleAuthBtn').addEventListener('click',async event=>{
   event.preventDefault();
   const error=document.getElementById('loginError');error.textContent='';
