@@ -760,7 +760,7 @@ iframe.skiptranslate,iframe.goog-te-banner-frame,.goog-te-banner-frame,[class*="
 .days-card .section-title h2{margin:3px 0;font-size:13px;color:#28205A}
 .days-card .graph-legend{font-size:7px;white-space:nowrap}
 .days-dial{display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:11px;border-top:1px solid #E8E4F4}
-.days-dial svg{display:block;width:96px;flex:0 0 auto}
+.days-dial svg{display:block;width:132px;flex:0 0 auto}
 .days-dial-progress{stroke-dasharray:326.73;stroke-dashoffset:315.84;transition:stroke-dashoffset .7s ease}
 .days-dial-value{fill:#28205A;font:800 19px Manrope;letter-spacing:-.6px}
 .days-dial-label{fill:#706A8A;font:700 6px 'DM Sans';letter-spacing:.3px}
@@ -770,7 +770,7 @@ iframe.skiptranslate,iframe.goog-te-banner-frame,.goog-te-banner-frame,[class*="
   .insight-column,.system-side{display:contents!important}
   .activity-graph,.jarvis-core,.compact-metrics,.days-card{aspect-ratio:1/1!important;min-height:0!important}
   .compact-metrics{margin:0!important;max-width:none!important;display:block!important;height:auto!important}
-  .compact-metrics article{height:100%!important;box-sizing:border-box!important;border:1.5px solid rgba(104,86,217,.62)!important;border-radius:13px!important;padding:20px!important;justify-content:space-between!important}
+  .compact-metrics article{height:100%!important;box-sizing:border-box!important;border:1px solid #E5E1F1!important;border-radius:13px!important;padding:20px!important;justify-content:space-between!important}
   .compact-metrics article>*{padding-left:0!important;padding-right:0!important}
   .compact-metrics .metric-top{padding-top:0!important}
   .compact-metrics article>div:nth-child(2){padding-top:0!important;padding-bottom:0!important}
@@ -783,14 +783,14 @@ iframe.skiptranslate,iframe.goog-te-banner-frame,.goog-te-banner-frame,[class*="
   .system-side{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:1fr!important;gap:12px!important}
   .compact-metrics,.days-card{margin:0!important;aspect-ratio:1/1!important;min-width:0!important}
   .compact-metrics{display:block!important;height:auto!important;max-width:none!important}
-  .compact-metrics article{height:100%!important;min-height:0!important;box-sizing:border-box!important;padding:15px!important;justify-content:space-between!important;border:1.5px solid rgba(104,86,217,.62)!important;border-radius:13px!important}
+  .compact-metrics article{height:100%!important;min-height:0!important;box-sizing:border-box!important;padding:15px!important;justify-content:space-between!important;border:1px solid #E5E1F1!important;border-radius:13px!important}
   .compact-metrics article>*{padding-left:0!important;padding-right:0!important}
   .compact-metrics .metric-top{padding-top:0!important}
   .compact-metrics article>div:nth-child(2){padding-top:0!important;padding-bottom:0!important}
   .compact-metrics article>div:nth-child(2) p{display:block!important;white-space:normal!important}
   .days-card{display:flex!important;flex-direction:column!important;padding:15px!important;box-sizing:border-box!important}
   .days-dial{flex:1!important;justify-content:center!important;align-items:center!important;margin-top:8px!important;padding-top:8px!important}
-  .days-dial svg{width:min(92px,48%)!important}.days-dial p{display:none!important}
+  .days-dial svg{width:min(128px,68%)!important}.days-dial p{display:none!important}
 }
 
 /* Compact map controls with comfortable icon clearance. */
@@ -909,7 +909,7 @@ body,.app-shell,.app-main{background:var(--paper)!important;color:var(--ink)}
 
 /* Total Deliveries card: purple belongs on the outer card border, never inside. */
 .main-metrics article::after{display:none!important}
-.main-metrics article.metric-deliveries{border:1.5px solid rgba(104,86,217,.62)!important}
+.main-metrics article.metric-deliveries{border:1px solid #E5E1F1!important}
 
 /* Let an order detail card end after its timeline instead of stretching to a grid row. */
 .orders-grid{align-items:start!important}
