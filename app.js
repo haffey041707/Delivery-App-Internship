@@ -1000,7 +1000,20 @@ document.getElementById('registerForm').addEventListener('submit', event => {
   event.preventDefault(); authRequest('/api/auth/register',{name:document.getElementById('registerName').value,email:document.getElementById('registerEmail').value,phone:document.getElementById('registerPhone').value,password:document.getElementById('registerPassword').value},'registerError');
 });
 document.getElementById('logoutBtn').addEventListener('click', async () => { await fetch('/api/auth/logout',{method:'POST'}); renderAccount(null); renderCustomerDashboard([]); document.getElementById('ordersEmpty').classList.remove('hidden'); document.getElementById('ordersGrid').classList.add('hidden'); accountMenu.classList.remove('open'); showView('home'); });
-async function restoreSession() { try { const response=await fetch('/api/auth/me'); const data=await response.json(); renderAccount(data.user); } catch (_) { renderAccount(null); } }
+async function restoreSession() {
+  const googleSuccess=new URLSearchParams(window.location.search).get('auth')==='google_success';
+  try {
+    const response=await fetch('/api/auth/me');
+    const data=await response.json();
+    renderAccount(data.user);
+    if (data.user && googleSuccess) {
+      document.getElementById('loginError').textContent='';
+      closeAuth();
+      loadLatestBooking();
+      showSuccess('Signed in',`Welcome back, ${data.user.name.split(' ')[0]}.`);
+    }
+  } catch (_) { renderAccount(null); }
+}
 window.addEventListener('load', restoreSession);
 
 const notificationOverlay=document.getElementById('notificationOverlay');

@@ -201,7 +201,10 @@ def current_user():
         register_session(session["user_id"])
     with connection() as db:
         user = db.execute("SELECT id,name,email,phone,created_at FROM users WHERE id = ?", (session["user_id"],)).fetchone()
-    return jsonify({"user": dict(user) if user else None})
+    # Vercel functions can run on different ephemeral instances.  Keep the
+    # verified identity in Flask's signed session so a successful Google login
+    # remains signed in even if that instance's temporary SQLite file is fresh.
+    return jsonify({"user": dict(user) if user else session.get("user_profile")})
 
 
 @app.post("/api/auth/change-password")
@@ -318,6 +321,7 @@ def google_token():
             user_id = cursor.lastrowid
         row = db.execute("SELECT id,name,email,phone FROM users WHERE id = ?", (user_id,)).fetchone()
     session["user_id"] = user_id
+    session["user_profile"] = dict(row)
     register_session(user_id)
     return jsonify(dict(row))
 
@@ -353,6 +357,7 @@ def google_callback():
                                     (name, email, "", generate_password_hash(secrets.token_urlsafe(32)), datetime.now(timezone.utc).isoformat()))
                 user_id = cursor.lastrowid
         session["user_id"] = user_id
+        session["user_profile"] = {"id": user_id, "name": name, "email": email, "phone": ""}
         register_session(user_id)
         return redirect("/?auth=google_success")
     except Exception as exc:
