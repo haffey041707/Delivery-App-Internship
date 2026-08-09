@@ -921,9 +921,12 @@ window.addEventListener('load', () => { if (window.lucide) lucide.createIcons();
 // Persistent session account UI.
 const authOverlay = document.getElementById('authOverlay');
 const accountMenu = document.getElementById('accountMenu');
+const entryGate = document.getElementById('entryGate');
 function initials(name) { return name.split(/\s+/).slice(0,2).map(part => part[0]).join('').toUpperCase(); }
 function renderAccount(user) {
   currentUser = user;
+  entryGate?.classList.toggle('hidden', Boolean(user));
+  entryGate?.setAttribute('aria-hidden', user ? 'true' : 'false');
   const initialBox = document.getElementById('accountInitials');
   if (user) {
     initialBox.textContent = initials(user.name);
@@ -959,6 +962,10 @@ function closeAuth() { authOverlay.classList.remove('open'); authOverlay.setAttr
 document.getElementById('accountBtn').addEventListener('click', event => { event.stopPropagation(); accountMenu.classList.toggle('open'); });
 document.addEventListener('click', event => { if (!event.target.closest('.account-wrap')) accountMenu.classList.remove('open'); });
 document.getElementById('profileAction').addEventListener('click', openAuth);
+document.querySelectorAll('[data-entry-auth]').forEach(button=>button.addEventListener('click',()=>{
+  openAuth();
+  document.querySelector(`[data-auth-tab="${button.dataset.entryAuth}"]`)?.click();
+}));
 document.getElementById('googleAuthBtn').addEventListener('click',async event=>{
   event.preventDefault();
   const error=document.getElementById('loginError');error.textContent='';
