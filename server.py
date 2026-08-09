@@ -186,9 +186,11 @@ def login():
         user = db.execute("SELECT * FROM users WHERE email = ?", (str(data.get("email", "")).strip().lower(),)).fetchone()
     if not user or not check_password_hash(user["password_hash"], str(data.get("password", ""))):
         return jsonify({"error": "Incorrect email or password"}), 401
+    profile = {key: user[key] for key in ("id", "name", "email", "phone")}
     session["user_id"] = user["id"]
+    session["user_profile"] = profile
     register_session(user["id"])
-    return jsonify({key: user[key] for key in ("id", "name", "email", "phone")})
+    return jsonify(profile)
 
 
 @app.post("/api/auth/logout")

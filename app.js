@@ -973,21 +973,22 @@ document.querySelectorAll('[data-entry-auth]').forEach(button=>button.addEventLi
 }));
 document.querySelectorAll('[data-entry-back]').forEach(button=>button.addEventListener('click',()=>showEntryPage('start')));
 async function entryAuthRequest(path,payload,errorId){
-  const error=document.getElementById(errorId);error.textContent='';
+  const error=document.getElementById(errorId);error.textContent='';error.className='auth-error';
   try{
     const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const data=await response.json();
-    if(!response.ok){error.textContent=data.error||'Unable to continue.';return;}
+    if(!response.ok){error.className='auth-error';error.textContent=data.error||'Unable to continue.';return;}
     if(data.requires_login){
       document.getElementById('entryLoginEmail').value=data.email;
       document.getElementById('entryLoginPassword').value='';
       showEntryPage('login');
-      document.getElementById('entryLoginError').textContent='Account created. Sign in with your password.';
+      document.getElementById('entryLoginError').className='auth-error auth-success';
+      document.getElementById('entryLoginError').textContent='Account created successfully. Sign in with your password.';
       document.getElementById('entryLoginPassword').focus();
       return;
     }
     renderAccount(data);loadLatestBooking();
-  }catch(_){error.textContent='Unable to reach Haulr right now.';}
+  }catch(_){error.className='auth-error';error.textContent='Unable to reach Haulr right now.';}
 }
 document.getElementById('entryLoginForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/login',{email:document.getElementById('entryLoginEmail').value,password:document.getElementById('entryLoginPassword').value},'entryLoginError');});
 document.getElementById('entryRegisterForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/register',{name:document.getElementById('entryRegisterName').value,email:document.getElementById('entryRegisterEmail').value,phone:document.getElementById('entryRegisterPhone').value,password:document.getElementById('entryRegisterPassword').value},'entryRegisterError');});
