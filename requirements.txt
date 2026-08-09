@@ -1,3 +1,4 @@
 Flask==3.1.1
 certifi>=2025.1.31
 gunicorn>=23.0.0
+vercel>=0.4.0

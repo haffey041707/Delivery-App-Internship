@@ -11,6 +11,7 @@ import json
 import secrets
 import ssl
 import certifi
+import hashlib
 from math import atan2, cos, radians, sin, sqrt
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,20 +29,87 @@ DATABASE = Path("/tmp/haulr.db") if os.environ.get("VERCEL") else ROOT / "haulr.
 
 def load_env_file() -> None:
     """Read key=value pairs from a local .env so secrets stay out of the source."""
-    env_path = ROOT / ".env"
-    if not env_path.exists():
-        return
-    for line in env_path.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    for env_path in (ROOT / ".env", ROOT / ".env.local"):
+        if not env_path.exists():
             continue
-        key, _, value = line.partition("=")
-        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
 load_env_file()
 app = Flask(__name__, static_folder=None)
 app.secret_key = os.environ.get("HAULR_SECRET_KEY", "haulr-local-development-key-change-in-production")
+
+
+def persistent_accounts_enabled() -> bool:
+    """Use Vercel Blob for durable accounts when its project token is available."""
+    return bool(os.environ.get("BLOB_READ_WRITE_TOKEN"))
+
+
+def account_path(email: str) -> str:
+    digest = hashlib.sha256(email.strip().lower().encode()).hexdigest()
+    return f"haulr-accounts/{digest}.json"
+
+
+def account_id(email: str) -> int:
+    # Stable positive SQLite-safe numeric ID, so the same account works with
+    # existing session/bookings code on every serverless instance.
+    return int(hashlib.sha256(email.strip().lower().encode()).hexdigest()[:15], 16)
+
+
+def persistent_account(email: str) -> dict | None:
+    if not persistent_accounts_enabled():
+        return None
+    try:
+        from vercel.blob import BlobClient, BlobNotFoundError
+        result = BlobClient().get(account_path(email), access="private", use_cache=False)
+        return json.loads(result.content.decode("utf-8"))
+    except Exception as exc:
+        # A missing profile is normal for a first sign-in; other errors fall
+        # back to the local runtime so sign-in is never stranded.
+        app.logger.info("Persistent account read unavailable for %s: %s", email, type(exc).__name__)
+        return None
+
+
+def save_persistent_account(account: dict) -> None:
+    if not persistent_accounts_enabled():
+        return
+    from vercel.blob import BlobClient
+    BlobClient().put(
+        account_path(account["email"]),
+        json.dumps(account, separators=(",", ":")).encode("utf-8"),
+        access="private",
+        content_type="application/json",
+        overwrite=True,
+    )
+
+
+def profile_for(account: dict | sqlite3.Row) -> dict:
+    return {key: account.get(key, "") if isinstance(account, dict) else account[key]
+            for key in ("id", "name", "email", "phone")}
+
+
+def find_user(email: str) -> dict | sqlite3.Row | None:
+    normalized = email.strip().lower()
+    saved = persistent_account(normalized)
+    if saved:
+        return saved
+    with connection() as db:
+        return db.execute("SELECT * FROM users WHERE email = ?", (normalized,)).fetchone()
+
+
+def create_persistent_user(name: str, email: str, phone: str, password_hash: str, provider: str = "email") -> dict:
+    account = {
+        "id": account_id(email), "name": name, "email": email.strip().lower(),
+        "phone": phone, "password_hash": password_hash, "provider": provider,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    save_persistent_account(account)
+    return account
 
 
 def connection() -> sqlite3.Connection:
@@ -169,6 +237,11 @@ def register():
     name, email, phone, password = (str(data.get(key, "")).strip() for key in ("name", "email", "phone", "password"))
     if len(name) < 2 or "@" not in email or len(phone) < 8 or len(password) < 8:
         return jsonify({"error": "Enter a valid name, email, phone, and password of at least 8 characters"}), 400
+    if persistent_accounts_enabled():
+        if find_user(email):
+            return jsonify({"error": "An account with this email already exists"}), 409
+        user = create_persistent_user(name, email, phone, generate_password_hash(password))
+        return jsonify({**profile_for(user), "requires_login": True}), 201
     try:
         with connection() as db:
             cursor = db.execute("INSERT INTO users (name,email,phone,password_hash,created_at) VALUES (?,?,?,?,?)",
@@ -182,12 +255,12 @@ def register():
 @app.post("/api/auth/login")
 def login():
     data = request.get_json(silent=True) or {}
-    with connection() as db:
-        user = db.execute("SELECT * FROM users WHERE email = ?", (str(data.get("email", "")).strip().lower(),)).fetchone()
+    email = str(data.get("email", "")).strip().lower()
+    user = find_user(email)
     if not user or not check_password_hash(user["password_hash"], str(data.get("password", ""))):
         return jsonify({"error": "Incorrect email or password"}), 401
-    profile = {key: user[key] for key in ("id", "name", "email", "phone")}
-    session["user_id"] = user["id"]
+    profile = profile_for(user)
+    session["user_id"] = profile["id"]
     session["user_profile"] = profile
     register_session(user["id"])
     return jsonify(profile)
@@ -209,12 +282,12 @@ def current_user():
         return jsonify({"user": None})
     if not session.get("session_token"):
         register_session(session["user_id"])
-    with connection() as db:
-        user = db.execute("SELECT id,name,email,phone,created_at FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+    saved_profile = session.get("user_profile") or {}
+    user = find_user(saved_profile.get("email", "")) if saved_profile.get("email") else None
     # Vercel functions can run on different ephemeral instances.  Keep the
     # verified identity in Flask's signed session so a successful Google login
     # remains signed in even if that instance's temporary SQLite file is fresh.
-    return jsonify({"user": dict(user) if user else session.get("user_profile")})
+    return jsonify({"user": profile_for(user) if user else session.get("user_profile")})
 
 
 @app.post("/api/auth/change-password")
@@ -225,6 +298,15 @@ def change_password():
     current, new_password = str(data.get("current_password", "")), str(data.get("new_password", ""))
     if len(new_password) < 8:
         return jsonify({"error": "New password must contain at least 8 characters"}), 400
+    if persistent_accounts_enabled():
+        profile = session.get("user_profile") or {}
+        user = find_user(profile.get("email", ""))
+        if not user or not check_password_hash(user["password_hash"], current):
+            return jsonify({"error": "Current password is incorrect"}), 400
+        user = dict(user)
+        user["password_hash"] = generate_password_hash(new_password)
+        save_persistent_account(user)
+        return jsonify({"status": "changed"})
     with connection() as db:
         user = db.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
         if not user or not check_password_hash(user["password_hash"], current):
@@ -321,19 +403,19 @@ def google_token():
         return jsonify({"error": "This Google account has no verified email"}), 401
     email = profile["email"].lower()
     name = profile.get("name") or email.split("@")[0]
-    with connection() as db:
-        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-        if user:
-            user_id = user["id"]
-        else:
+    user = find_user(email)
+    if not user and persistent_accounts_enabled():
+        user = create_persistent_user(name, email, "", generate_password_hash(secrets.token_urlsafe(32)), "google")
+    elif not user:
+        with connection() as db:
             cursor = db.execute("INSERT INTO users (name,email,phone,password_hash,created_at) VALUES (?,?,?,?,?)",
                                 (name, email, "", generate_password_hash(secrets.token_urlsafe(32)), datetime.now(timezone.utc).isoformat()))
-            user_id = cursor.lastrowid
-        row = db.execute("SELECT id,name,email,phone FROM users WHERE id = ?", (user_id,)).fetchone()
-    session["user_id"] = user_id
-    session["user_profile"] = dict(row)
-    register_session(user_id)
-    return jsonify(dict(row))
+            user = db.execute("SELECT * FROM users WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    row = profile_for(user)
+    session["user_id"] = row["id"]
+    session["user_profile"] = row
+    register_session(row["id"])
+    return jsonify(row)
 
 
 @app.get("/api/auth/google/callback")
@@ -358,17 +440,18 @@ def google_callback():
         if not profile.get("email") or not profile.get("email_verified"):
             raise ValueError("Google email is not verified")
         email, name = profile["email"].lower(), profile.get("name") or profile["email"].split("@")[0]
-        with connection() as db:
-            user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-            if user:
-                user_id = user["id"]
-            else:
+        user = find_user(email)
+        if not user and persistent_accounts_enabled():
+            user = create_persistent_user(name, email, "", generate_password_hash(secrets.token_urlsafe(32)), "google")
+        elif not user:
+            with connection() as db:
                 cursor = db.execute("INSERT INTO users (name,email,phone,password_hash,created_at) VALUES (?,?,?,?,?)",
                                     (name, email, "", generate_password_hash(secrets.token_urlsafe(32)), datetime.now(timezone.utc).isoformat()))
-                user_id = cursor.lastrowid
-        session["user_id"] = user_id
-        session["user_profile"] = {"id": user_id, "name": name, "email": email, "phone": ""}
-        register_session(user_id)
+                user = db.execute("SELECT * FROM users WHERE id = ?", (cursor.lastrowid,)).fetchone()
+        identity = profile_for(user)
+        session["user_id"] = identity["id"]
+        session["user_profile"] = identity
+        register_session(identity["id"])
         return redirect("/?auth=google_success")
     except Exception as exc:
         app.logger.exception("Google OAuth callback failed: %s", exc)
