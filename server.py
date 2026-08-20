@@ -89,8 +89,10 @@ def save_persistent_account(account: dict) -> None:
 
 
 def profile_for(account: dict | sqlite3.Row) -> dict:
-    return {key: account.get(key, "") if isinstance(account, dict) else account[key]
-            for key in ("id", "name", "email", "phone")}
+    profile = {key: account.get(key, "") if isinstance(account, dict) else account[key]
+               for key in ("id", "name", "email", "phone")}
+    profile["role"] = account.get("role", "customer") if isinstance(account, dict) else (account["role"] if "role" in account.keys() else "customer")
+    return profile
 
 
 def find_user(email: str) -> dict | sqlite3.Row | None:
@@ -102,10 +104,10 @@ def find_user(email: str) -> dict | sqlite3.Row | None:
         return db.execute("SELECT * FROM users WHERE email = ?", (normalized,)).fetchone()
 
 
-def create_persistent_user(name: str, email: str, phone: str, password_hash: str, provider: str = "email") -> dict:
+def create_persistent_user(name: str, email: str, phone: str, password_hash: str, provider: str = "email", role: str = "customer") -> dict:
     account = {
         "id": account_id(email), "name": name, "email": email.strip().lower(),
-        "phone": phone, "password_hash": password_hash, "provider": provider,
+        "phone": phone, "password_hash": password_hash, "provider": provider, "role": role,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     save_persistent_account(account)
@@ -170,6 +172,8 @@ def init_database() -> None:
             db.execute("ALTER TABLE users ADD COLUMN upi_provider TEXT")
         if "cash_preferred" not in user_columns:
             db.execute("ALTER TABLE users ADD COLUMN cash_preferred INTEGER DEFAULT 0")
+        if "role" not in user_columns:
+            db.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'customer'")
         existing = {row[1] for row in db.execute("PRAGMA table_info(bookings)")}
         for name, definition in {
             "schedule": "TEXT DEFAULT 'now'",
@@ -235,21 +239,24 @@ def health():
 def register():
     data = request.get_json(silent=True) or {}
     name, email, phone, password = (str(data.get(key, "")).strip() for key in ("name", "email", "phone", "password"))
+    role = str(data.get("role", "customer")).strip().lower()
+    if role not in {"customer", "driver"}:
+        return jsonify({"error": "Choose whether you are registering as a customer or driver"}), 400
     if len(name) < 2 or "@" not in email or len(phone) < 8 or len(password) < 8:
         return jsonify({"error": "Enter a valid name, email, phone, and password of at least 8 characters"}), 400
     if persistent_accounts_enabled():
         if find_user(email):
             return jsonify({"error": "An account with this email already exists"}), 409
-        user = create_persistent_user(name, email, phone, generate_password_hash(password))
+        user = create_persistent_user(name, email, phone, generate_password_hash(password), role=role)
         return jsonify({**profile_for(user), "requires_login": True}), 201
     try:
         with connection() as db:
-            cursor = db.execute("INSERT INTO users (name,email,phone,password_hash,created_at) VALUES (?,?,?,?,?)",
-                                (name, email.lower(), phone, generate_password_hash(password), datetime.now(timezone.utc).isoformat()))
+            cursor = db.execute("INSERT INTO users (name,email,phone,password_hash,role,created_at) VALUES (?,?,?,?,?,?)",
+                                (name, email.lower(), phone, generate_password_hash(password), role, datetime.now(timezone.utc).isoformat()))
             user_id = cursor.lastrowid
     except sqlite3.IntegrityError:
         return jsonify({"error": "An account with this email already exists"}), 409
-    return jsonify({"id": user_id, "name": name, "email": email.lower(), "phone": phone, "requires_login": True}), 201
+    return jsonify({"id": user_id, "name": name, "email": email.lower(), "phone": phone, "role": role, "requires_login": True}), 201
 
 
 @app.post("/api/auth/login")

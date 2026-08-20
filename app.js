@@ -965,6 +965,7 @@ function renderAccount(user) {
     document.getElementById('settingsEmail').value = user.email;
     document.getElementById('settingsPhone').value = user.phone;
     document.getElementById('dashboardGreeting').innerHTML = `Good to see you, ${safe(user.name.split(' ')[0])}.<br><em>What are we moving?</em>`;
+    if (user.role === 'driver') renderDriverWorkspace(user);
     loadWallet();
     loadNotifications();
   } else {
@@ -981,6 +982,31 @@ function renderAccount(user) {
   }
   if (window.lucide) lucide.createIcons();
 }
+
+function renderDriverWorkspace(user) {
+  const driverView = document.getElementById('driver-view');
+  if (!driverView) return;
+  driverView.querySelector('.dash-head h1').textContent = `Welcome, ${user.name.split(' ')[0]}`;
+  driverView.querySelector('.dash-head p').textContent = 'DRIVER WORKSPACE · VERIFIED DELIVERY PARTNER';
+  driverView.querySelector('.side-nav p').textContent = 'HAULR DRIVER';
+  const card = driverView.querySelector('.request-card');
+  if (card && !card.querySelector('.driver-onboarding-note')) {
+    card.insertAdjacentHTML('beforeend', '<p class="driver-onboarding-note"><i data-lucide="shield-check"></i> Complete document verification to receive live booking requests.</p>');
+  }
+  setTimeout(() => showView('driver'), 0);
+}
+
+function addRolePicker(form, fieldId) {
+  if (!form || form.querySelector('.role-picker')) return;
+  form.insertAdjacentHTML('afterbegin', `<fieldset class="role-picker"><legend>Register in Haulr as</legend><input type="hidden" id="${fieldId}" value="customer"><div><button type="button" class="active" data-register-role="customer"><i data-lucide="package-check"></i><span><b>Customer</b><small>Book and track deliveries</small></span></button><button type="button" data-register-role="driver"><i data-lucide="truck"></i><span><b>Driver</b><small>Deliver and earn with Haulr</small></span></button></div></fieldset>`);
+  form.querySelectorAll('[data-register-role]').forEach(button => button.addEventListener('click', () => {
+    form.querySelectorAll('[data-register-role]').forEach(item => item.classList.toggle('active', item === button));
+    form.querySelector(`#${fieldId}`).value = button.dataset.registerRole;
+    if (window.lucide) lucide.createIcons();
+  }));
+}
+addRolePicker(document.getElementById('entryRegisterForm'), 'entryRegisterRole');
+addRolePicker(document.getElementById('registerForm'), 'registerRole');
 function openAuth() { authOverlay.classList.add('open'); authOverlay.setAttribute('aria-hidden','false'); accountMenu.classList.remove('open'); document.body.style.overflow='hidden'; setTimeout(initGoogleIdentity, 60); }
 function closeAuth() { authOverlay.classList.remove('open'); authOverlay.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
 document.getElementById('accountBtn').addEventListener('click', event => { event.stopPropagation(); accountMenu.classList.toggle('open'); });
@@ -1015,7 +1041,7 @@ async function entryAuthRequest(path,payload,errorId){
   }catch(_){error.className='auth-error';error.textContent='Unable to reach Haulr right now.';}
 }
 document.getElementById('entryLoginForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/login',{email:document.getElementById('entryLoginEmail').value,password:document.getElementById('entryLoginPassword').value},'entryLoginError');});
-document.getElementById('entryRegisterForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/register',{name:document.getElementById('entryRegisterName').value,email:document.getElementById('entryRegisterEmail').value,phone:document.getElementById('entryRegisterPhone').value,password:document.getElementById('entryRegisterPassword').value},'entryRegisterError');});
+document.getElementById('entryRegisterForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/register',{name:document.getElementById('entryRegisterName').value,email:document.getElementById('entryRegisterEmail').value,phone:document.getElementById('entryRegisterPhone').value,password:document.getElementById('entryRegisterPassword').value,role:document.getElementById('entryRegisterRole').value},'entryRegisterError');});
 document.getElementById('googleAuthBtn').addEventListener('click',async event=>{
   event.preventDefault();
   const error=document.getElementById('loginError');error.textContent='';
@@ -1054,7 +1080,7 @@ document.getElementById('loginForm').addEventListener('submit', event => {
   event.preventDefault(); authRequest('/api/auth/login',{email:document.getElementById('loginEmail').value,password:document.getElementById('loginPassword').value},'loginError');
 });
 document.getElementById('registerForm').addEventListener('submit', event => {
-  event.preventDefault(); authRequest('/api/auth/register',{name:document.getElementById('registerName').value,email:document.getElementById('registerEmail').value,phone:document.getElementById('registerPhone').value,password:document.getElementById('registerPassword').value},'registerError');
+  event.preventDefault(); authRequest('/api/auth/register',{name:document.getElementById('registerName').value,email:document.getElementById('registerEmail').value,phone:document.getElementById('registerPhone').value,password:document.getElementById('registerPassword').value,role:document.getElementById('registerRole').value},'registerError');
 });
 document.getElementById('logoutBtn').addEventListener('click', async () => { await fetch('/api/auth/logout',{method:'POST'}); renderAccount(null); renderCustomerDashboard([]); document.getElementById('ordersEmpty').classList.remove('hidden'); document.getElementById('ordersGrid').classList.add('hidden'); accountMenu.classList.remove('open'); showView('home'); });
 async function restoreSession() {
