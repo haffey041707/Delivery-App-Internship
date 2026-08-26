@@ -1023,13 +1023,16 @@ function initializeDriverPortal(driverView, user) {
   }
 
   sidebar.innerHTML = `<div><p>HAULR DRIVER</p><button class="active" data-driver-view="home"><i data-lucide="house"></i><span>Home</span></button><button data-driver-view="orders"><i data-lucide="clipboard-list"></i><span>Orders</span></button><button data-driver-view="deliveries"><i data-lucide="history"></i><span>Previous deliveries</span></button><button data-driver-view="settings"><i data-lucide="settings-2"></i><span>Settings</span></button></div><button class="sign-out" id="driverSignOut"><i data-lucide="log-out"></i><span>Sign out</span></button>`;
+  if (!driverView.querySelector('.driver-mobile-nav')) {
+    driverView.insertAdjacentHTML('beforeend', `<nav class="driver-mobile-nav" aria-label="Driver navigation"><button class="active" data-driver-view="home"><i data-lucide="house"></i><span>Home</span></button><button data-driver-view="orders"><i data-lucide="clipboard-list"></i><span>Orders</span></button><button data-driver-view="deliveries"><i data-lucide="history"></i><span>Deliveries</span></button><button data-driver-view="settings"><i data-lucide="settings-2"></i><span>Settings</span></button></nav>`);
+  }
   const select = section => {
     driverView.querySelectorAll('[data-driver-section]').forEach(panel => panel.classList.toggle('active', panel.dataset.driverSection === section));
-    sidebar.querySelectorAll('[data-driver-view]').forEach(button => button.classList.toggle('active', button.dataset.driverView === section));
+    driverView.querySelectorAll('[data-driver-view]').forEach(button => button.classList.toggle('active', button.dataset.driverView === section));
     driverView.querySelector('.dash-content')?.scrollTo({top:0, behavior:'smooth'});
     if (window.lucide) lucide.createIcons();
   };
-  sidebar.querySelectorAll('[data-driver-view]').forEach(button => button.addEventListener('click', () => select(button.dataset.driverView)));
+  driverView.querySelectorAll('[data-driver-view]').forEach(button => button.addEventListener('click', () => select(button.dataset.driverView)));
   driverView.querySelectorAll('[data-driver-home]').forEach(button => button.addEventListener('click', () => select('home')));
   sidebar.querySelector('#driverSignOut')?.addEventListener('click', async () => {
     await fetch('/api/auth/logout', {method:'POST'});
