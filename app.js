@@ -988,12 +988,55 @@ function renderDriverWorkspace(user) {
   if (!driverView) return;
   driverView.querySelector('.dash-head h1').textContent = `Welcome, ${user.name.split(' ')[0]}`;
   driverView.querySelector('.dash-head p').textContent = 'DRIVER WORKSPACE · VERIFIED DELIVERY PARTNER';
-  driverView.querySelector('.side-nav p').textContent = 'HAULR DRIVER';
+  initializeDriverPortal(driverView, user);
   const card = driverView.querySelector('.request-card');
   if (card && !card.querySelector('.driver-onboarding-note')) {
     card.insertAdjacentHTML('beforeend', '<p class="driver-onboarding-note"><i data-lucide="shield-check"></i> Complete document verification to receive live booking requests.</p>');
   }
   setTimeout(() => showView('driver'), 0);
+}
+
+function initializeDriverPortal(driverView, user) {
+  const sidebar = driverView.querySelector('.side-nav');
+  const home = driverView.querySelector('.dash-content');
+  if (!sidebar || !home) return;
+
+  home.classList.add('driver-section', 'active');
+  home.dataset.driverSection = 'home';
+  if (!driverView.querySelector('[data-driver-section="orders"]')) {
+    home.insertAdjacentHTML('afterend', `
+      <section class="driver-section driver-utility" data-driver-section="orders">
+        <div class="driver-section-head"><small>LIVE WORK</small><h1>Orders</h1><p>Review new loading requests and your active delivery trips.</p></div>
+        <div class="driver-order-grid">
+          <article><span><i data-lucide="radio-tower"></i></span><small>NEW REQUEST</small><h2>Waiting for a nearby customer</h2><p>Go online to receive verified load delivery requests.</p><button type="button" class="driver-action" data-driver-home>Open driver home <i data-lucide="arrow-right"></i></button></article>
+          <article><span><i data-lucide="route"></i></span><small>ACTIVE TRIPS</small><h2>Trip updates in one place</h2><p>Accepted pickup and delivery progress will appear here automatically.</p><button type="button" class="driver-action" data-driver-home>View current request <i data-lucide="arrow-right"></i></button></article>
+        </div>
+      </section>
+      <section class="driver-section driver-utility" data-driver-section="deliveries">
+        <div class="driver-section-head"><small>TRIP HISTORY</small><h1>Previous deliveries</h1><p>Your completed trips and earnings summary.</p></div>
+        <div class="driver-history"><article><span><i data-lucide="circle-check"></i></span><div><b>Sector 7 → Infocity</b><small>Completed today · 5.2 km</small></div><strong>₹280</strong></article><article><span><i data-lucide="circle-check"></i></span><div><b>Kudasan → Sargasan</b><small>Completed today · 3.7 km</small></div><strong>₹220</strong></article><article><span><i data-lucide="circle-check"></i></span><div><b>Sector 21 → Pethapur</b><small>Completed yesterday · 8.1 km</small></div><strong>₹410</strong></article></div>
+      </section>
+      <section class="driver-section driver-utility" data-driver-section="settings">
+        <div class="driver-section-head"><small>DRIVER ACCOUNT</small><h1>Settings</h1><p>Manage availability, vehicle information and verification documents.</p></div>
+        <div class="driver-settings-list"><article><span><i data-lucide="badge-check"></i></span><div><b>Document verification</b><small>Aadhaar, driving licence, RC and profile photo</small></div><em>Pending review</em></article><article><span><i data-lucide="truck"></i></span><div><b>Vehicle details</b><small>Loading vehicle and registration details</small></div><em>Update</em></article><article><span><i data-lucide="bell-ring"></i></span><div><b>Trip alerts</b><small>Booking, pickup and payment notifications</small></div><em>Enabled</em></article></div>
+      </section>`);
+  }
+
+  sidebar.innerHTML = `<div><p>HAULR DRIVER</p><button class="active" data-driver-view="home"><i data-lucide="house"></i><span>Home</span></button><button data-driver-view="orders"><i data-lucide="clipboard-list"></i><span>Orders</span></button><button data-driver-view="deliveries"><i data-lucide="history"></i><span>Previous deliveries</span></button><button data-driver-view="settings"><i data-lucide="settings-2"></i><span>Settings</span></button></div><button class="sign-out" id="driverSignOut"><i data-lucide="log-out"></i><span>Sign out</span></button>`;
+  const select = section => {
+    driverView.querySelectorAll('[data-driver-section]').forEach(panel => panel.classList.toggle('active', panel.dataset.driverSection === section));
+    sidebar.querySelectorAll('[data-driver-view]').forEach(button => button.classList.toggle('active', button.dataset.driverView === section));
+    driverView.querySelector('.dash-content')?.scrollTo({top:0, behavior:'smooth'});
+    if (window.lucide) lucide.createIcons();
+  };
+  sidebar.querySelectorAll('[data-driver-view]').forEach(button => button.addEventListener('click', () => select(button.dataset.driverView)));
+  driverView.querySelectorAll('[data-driver-home]').forEach(button => button.addEventListener('click', () => select('home')));
+  sidebar.querySelector('#driverSignOut')?.addEventListener('click', async () => {
+    await fetch('/api/auth/logout', {method:'POST'});
+    renderAccount(null);
+    showView('home');
+  });
+  if (window.lucide) lucide.createIcons();
 }
 
 function addRolePicker(form, fieldId) {
@@ -1042,11 +1085,28 @@ async function entryAuthRequest(path,payload,errorId){
 }
 document.getElementById('entryLoginForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/login',{email:document.getElementById('entryLoginEmail').value,password:document.getElementById('entryLoginPassword').value},'entryLoginError');});
 document.getElementById('entryRegisterForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/register',{name:document.getElementById('entryRegisterName').value,email:document.getElementById('entryRegisterEmail').value,phone:document.getElementById('entryRegisterPhone').value,password:document.getElementById('entryRegisterPassword').value,role:document.getElementById('entryRegisterRole').value},'entryRegisterError');});
-document.getElementById('googleAuthBtn').addEventListener('click',async event=>{
-  event.preventDefault();
-  const error=document.getElementById('loginError');error.textContent='';
-  try{const response=await fetch('/api/auth/google/status');const data=await response.json();if(data.configured){window.location.href='/api/auth/google/start';}else{error.textContent='Google sign-in needs the Google Client ID and Secret configured on this server.';}}
-  catch(_){error.textContent='Unable to start Google sign-in right now.';}
+async function launchGoogleSignIn(event) {
+  event?.preventDefault();
+  const error = document.getElementById('loginError') || document.getElementById('entryLoginError');
+  if (error) { error.textContent = ''; error.className = 'auth-error'; }
+  try {
+    const response = await fetch('/api/auth/google/status');
+    const data = await response.json();
+    if (!data.configured) throw new Error('Google sign-in is not configured yet.');
+    const popup = window.open('/api/auth/google/start?popup=1', 'haulrGoogleSignIn', 'popup=yes,width=520,height=680,resizable=yes,scrollbars=yes');
+    // A browser may block popups; keep a same-window path as a safe fallback.
+    if (!popup) { window.location.assign('/api/auth/google/start'); return; }
+  } catch (issue) {
+    if (error) error.textContent = issue.message || 'Unable to start Google sign-in right now.';
+  }
+}
+document.getElementById('googleAuthBtn').addEventListener('click', launchGoogleSignIn);
+document.querySelectorAll('.entry-google').forEach(button => button.addEventListener('click', launchGoogleSignIn));
+window.addEventListener('message', async event => {
+  if (event.origin !== window.location.origin || event.data?.type !== 'haulr-google-signed-in') return;
+  const response = await fetch('/api/auth/me');
+  const data = await response.json();
+  if (data.user) { renderAccount(data.user); loadLatestBooking(); }
 });
 document.getElementById('authClose').addEventListener('click', closeAuth);
 authOverlay.addEventListener('click', event => { if (event.target === authOverlay) closeAuth(); });
@@ -1084,7 +1144,8 @@ document.getElementById('registerForm').addEventListener('submit', event => {
 });
 document.getElementById('logoutBtn').addEventListener('click', async () => { await fetch('/api/auth/logout',{method:'POST'}); renderAccount(null); renderCustomerDashboard([]); document.getElementById('ordersEmpty').classList.remove('hidden'); document.getElementById('ordersGrid').classList.add('hidden'); accountMenu.classList.remove('open'); showView('home'); });
 async function restoreSession() {
-  const googleSuccess=new URLSearchParams(window.location.search).get('auth')==='google_success';
+  const authParams=new URLSearchParams(window.location.search);
+  const googleSuccess=authParams.get('auth')==='google_success';
   try {
     const response=await fetch('/api/auth/me');
     const data=await response.json();
@@ -1094,6 +1155,10 @@ async function restoreSession() {
       closeAuth();
       loadLatestBooking();
       showSuccess('Signed in',`Welcome back, ${data.user.name.split(' ')[0]}.`);
+      if (authParams.get('popup') === '1' && window.opener) {
+        window.opener.postMessage({type:'haulr-google-signed-in'}, window.location.origin);
+        setTimeout(() => window.close(), 120);
+      }
     }
   } catch (_) { renderAccount(null); }
 }

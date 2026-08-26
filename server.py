@@ -374,6 +374,7 @@ def google_start():
         return "Google sign-in needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET configured on the server.", 503
     state = secrets.token_urlsafe(24)
     session["google_oauth_state"] = state
+    session["google_oauth_popup"] = request.args.get("popup") == "1"
     callback = request.host_url.rstrip("/") + "/api/auth/google/callback"
     query = urlencode({
         "client_id": client_id, "redirect_uri": callback, "response_type": "code",
@@ -459,7 +460,8 @@ def google_callback():
         session["user_id"] = identity["id"]
         session["user_profile"] = identity
         register_session(identity["id"])
-        return redirect("/?auth=google_success")
+        popup = session.pop("google_oauth_popup", False)
+        return redirect("/?auth=google_success" + ("&popup=1" if popup else ""))
     except Exception as exc:
         app.logger.exception("Google OAuth callback failed: %s", exc)
         return redirect("/?auth_error=google_failed")
