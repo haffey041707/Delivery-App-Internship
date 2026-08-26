@@ -1003,23 +1003,60 @@ function initializeDriverPortal(driverView, user) {
 
   home.classList.add('driver-section', 'active');
   home.dataset.driverSection = 'home';
+  // Keep the real request controls and trip list intact while moving them out
+  // of Home. Moving the nodes (rather than copying HTML) preserves their
+  // existing accept/reject handlers.
+  const originalColumns = home.querySelector('.dash-columns');
+  const requestPanel = originalColumns?.querySelector('section:first-child');
+  const tripPanel = originalColumns?.querySelector('section:last-child');
   if (!driverView.querySelector('[data-driver-section="orders"]')) {
     home.insertAdjacentHTML('afterend', `
       <section class="driver-section driver-utility" data-driver-section="orders">
         <div class="driver-section-head"><small>LIVE WORK</small><h1>Orders</h1><p>Review new loading requests and your active delivery trips.</p></div>
+        <div class="driver-live-request"></div>
         <div class="driver-order-grid">
-          <article><span><i data-lucide="radio-tower"></i></span><small>NEW REQUEST</small><h2>Waiting for a nearby customer</h2><p>Go online to receive verified load delivery requests.</p><button type="button" class="driver-action" data-driver-home>Open driver home <i data-lucide="arrow-right"></i></button></article>
-          <article><span><i data-lucide="route"></i></span><small>ACTIVE TRIPS</small><h2>Trip updates in one place</h2><p>Accepted pickup and delivery progress will appear here automatically.</p><button type="button" class="driver-action" data-driver-home>View current request <i data-lucide="arrow-right"></i></button></article>
+          <article><span><i data-lucide="radio-tower"></i></span><small>AVAILABILITY</small><h2>Ready for your next request</h2><p>Keep your driver profile verified and stay online to receive nearby loads.</p></article>
+          <article><span><i data-lucide="route"></i></span><small>ACTIVE TRIPS</small><h2>Trip updates in one place</h2><p>Accepted pickup and delivery progress will appear here automatically.</p></article>
         </div>
       </section>
       <section class="driver-section driver-utility" data-driver-section="deliveries">
         <div class="driver-section-head"><small>TRIP HISTORY</small><h1>Previous deliveries</h1><p>Your completed trips and earnings summary.</p></div>
-        <div class="driver-history"><article><span><i data-lucide="circle-check"></i></span><div><b>Sector 7 → Infocity</b><small>Completed today · 5.2 km</small></div><strong>₹280</strong></article><article><span><i data-lucide="circle-check"></i></span><div><b>Kudasan → Sargasan</b><small>Completed today · 3.7 km</small></div><strong>₹220</strong></article><article><span><i data-lucide="circle-check"></i></span><div><b>Sector 21 → Pethapur</b><small>Completed yesterday · 8.1 km</small></div><strong>₹410</strong></article></div>
+        <div class="driver-history driver-history-fallback"><article><span><i data-lucide="circle-check"></i></span><div><b>Sector 7 → Infocity</b><small>Completed today · 5.2 km</small></div><strong>₹280</strong></article><article><span><i data-lucide="circle-check"></i></span><div><b>Kudasan → Sargasan</b><small>Completed today · 3.7 km</small></div><strong>₹220</strong></article><article><span><i data-lucide="circle-check"></i></span><div><b>Sector 21 → Pethapur</b><small>Completed yesterday · 8.1 km</small></div><strong>₹410</strong></article></div>
       </section>
       <section class="driver-section driver-utility" data-driver-section="settings">
         <div class="driver-section-head"><small>DRIVER ACCOUNT</small><h1>Settings</h1><p>Manage availability, vehicle information and verification documents.</p></div>
         <div class="driver-settings-list"><article><span><i data-lucide="badge-check"></i></span><div><b>Document verification</b><small>Aadhaar, driving licence, RC and profile photo</small></div><em>Pending review</em></article><article><span><i data-lucide="truck"></i></span><div><b>Vehicle details</b><small>Loading vehicle and registration details</small></div><em>Update</em></article><article><span><i data-lucide="bell-ring"></i></span><div><b>Trip alerts</b><small>Booking, pickup and payment notifications</small></div><em>Enabled</em></article></div>
       </section>`);
+  }
+
+  if (!home.dataset.driverHomePrepared) {
+    const ordersPanel = driverView.querySelector('[data-driver-section="orders"]');
+    const deliveriesPanel = driverView.querySelector('[data-driver-section="deliveries"]');
+    if (requestPanel && ordersPanel) {
+      requestPanel.classList.add('driver-request-panel');
+      ordersPanel.querySelector('.driver-live-request')?.append(requestPanel);
+    }
+    if (tripPanel && deliveriesPanel) {
+      tripPanel.classList.add('driver-trip-panel');
+      deliveriesPanel.querySelector('.driver-history-fallback')?.remove();
+      deliveriesPanel.append(tripPanel);
+    }
+    originalColumns?.remove();
+    home.innerHTML = `
+      <div class="driver-home-shell">
+        <section class="driver-home-hero">
+          <div><small>DRIVER COMMAND CENTRE</small><h1>Ready to move<br><em>more, ${user.name.split(' ')[0]}.</em></h1><p>Keep your vehicle online, track performance and manage every delivery from one place.</p></div>
+          <div class="driver-online-chip"><span></span> Available for requests</div>
+        </section>
+        <section class="driver-home-insights">
+          <article class="driver-spend-card"><div class="driver-card-heading"><div><small>DELIVERY ACTIVITY</small><h2>Today's earnings</h2></div><b>₹850</b></div><div class="driver-donut"><div><strong>₹850</strong><small>earned today</small></div></div><div class="driver-legend"><span><i></i>Completed <b>₹620</b></span><span><i></i>In progress <b>₹230</b></span></div></article>
+          <article class="driver-jarvis-card"><div class="driver-status-orbit"><div class="driver-status-copy"><small>DRIVER STATUS</small><strong>Online</strong><span>3 active deliveries</span></div></div><div class="driver-status-foot"><span><i></i> Fleet connected</span><span><i></i> Routing live</span></div></article>
+          <article class="driver-summary-card"><span><i data-lucide="package-check"></i></span><small>COMPLETED TRIPS</small><strong>12</strong><p>Deliveries completed this month</p></article>
+          <article class="driver-summary-card driver-rating-card"><span><i data-lucide="star"></i></span><small>DRIVER RATING</small><strong>4.9</strong><p>Based on verified customer feedback</p></article>
+        </section>
+        <section class="driver-home-next"><div><small>NEXT STEP</small><h2>New requests are in Orders</h2><p>Review customer loads, accept trips and keep delivery progress updated from one focused place.</p></div><button type="button" data-driver-view="orders">Open Orders <i data-lucide="arrow-right"></i></button></section>
+      </div>`;
+    home.dataset.driverHomePrepared = 'true';
   }
 
   sidebar.innerHTML = `<div><p>HAULR DRIVER</p><button class="active" data-driver-view="home"><i data-lucide="house"></i><span>Home</span></button><button data-driver-view="orders"><i data-lucide="clipboard-list"></i><span>Orders</span></button><button data-driver-view="deliveries"><i data-lucide="history"></i><span>Previous deliveries</span></button><button data-driver-view="settings"><i data-lucide="settings-2"></i><span>Settings</span></button></div><button class="sign-out" id="driverSignOut"><i data-lucide="log-out"></i><span>Sign out</span></button>`;
