@@ -1051,8 +1051,8 @@ function initializeDriverPortal(driverView, user) {
         <section class="driver-home-insights">
           <article class="driver-spend-card"><div class="driver-card-heading"><div><small>DELIVERY ACTIVITY</small><h2>Today's earnings</h2></div><b>₹850</b></div><div class="driver-donut"><div><strong>₹850</strong><small>earned today</small></div></div><div class="driver-legend"><span><i></i>Completed <b>₹620</b></span><span><i></i>In progress <b>₹230</b></span></div></article>
           <article class="driver-jarvis-card"><div class="driver-status-orbit"><div class="driver-status-copy"><small>DRIVER STATUS</small><strong>Online</strong><span>3 active deliveries</span></div></div><div class="driver-status-foot"><span><i></i> Fleet connected</span><span><i></i> Routing live</span></div></article>
-          <article class="driver-summary-card"><span><i data-lucide="package-check"></i></span><small>COMPLETED TRIPS</small><strong>12</strong><p>Deliveries completed this month</p></article>
-          <article class="driver-summary-card driver-rating-card"><span><i data-lucide="star"></i></span><small>DRIVER RATING</small><strong>4.9</strong><p>Based on verified customer feedback</p></article>
+          <article class="driver-summary-card driver-deliveries-card"><div class="driver-card-heading"><div><small>TOTAL DELIVERIES</small><h2>Completed trips</h2></div><span><i data-lucide="package-check"></i></span></div><strong>12</strong><p>Your completed delivery history</p></article>
+          <article class="driver-summary-card driver-days-card"><div class="driver-card-heading"><div><small>MEMBER ACTIVITY</small><h2>Days with Haulr</h2></div><b>Since joining</b></div><div class="driver-days-ring"><div><strong>18</strong><small>days active</small></div></div></article>
         </section>
         <section class="driver-home-next"><div><small>NEXT STEP</small><h2>New requests are in Orders</h2><p>Review customer loads, accept trips and keep delivery progress updated from one focused place.</p></div><button type="button" data-driver-view="orders">Open Orders <i data-lucide="arrow-right"></i></button></section>
       </div>`;
