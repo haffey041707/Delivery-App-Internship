@@ -401,26 +401,48 @@ function populateDriverRequest(booking) {
   document.getElementById('requestLoad').textContent = `${booking.load_type} · ${booking.weight} kg`;
 }
 
-async function changeBookingStatus(status) {
-  if (!activeBookingId) return null;
-  const response = await fetch(`/api/bookings/${activeBookingId}/status`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status}) });
-  if(!response.ok) return null;
-  const booking=await response.json();
-  loadNotifications();
-  return booking;
+async function changeBookingStatus(status, bookingId = activeBookingId) {
+  const id = Number(bookingId || requestCard?.dataset.bookingId);
+  if (!id) {
+    showNotice('Choose a booking request first');
+    return null;
+  }
+  try {
+    const response = await fetch(`/api/bookings/${id}/status`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status}) });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      showNotice(data.error || 'We could not update this delivery. Please try again.');
+      return null;
+    }
+    activeBookingId = data.id;
+    loadNotifications();
+    return data;
+  } catch (_) {
+    showNotice('Connection issue. Please try accepting the booking again.');
+    return null;
+  }
 }
 
-document.getElementById('acceptBtn').addEventListener('click', async () => {
-  const booking=await changeBookingStatus('accepted');
-  if (!booking) return;
-  // Drivers go directly to the live route after accepting the load.
-  openDriverNavigation(booking);
-});
-document.getElementById('rejectBtn').addEventListener('click', async () => {
-  if (!await changeBookingStatus('rejected')) return;
-  requestCard.style.opacity = '.35';
-  requestCard.style.pointerEvents = 'none';
-  document.querySelector('.timer').textContent = 'Declined';
+// The request card is moved into the driver Orders page at runtime, so use one
+// delegated handler that remains valid after the layout changes.
+document.addEventListener('click', async event => {
+  const accept = event.target.closest('#acceptBtn');
+  if (accept) {
+    accept.disabled = true;
+    const booking = await changeBookingStatus('accepted', requestCard?.dataset.bookingId);
+    accept.disabled = false;
+    if (booking) openDriverNavigation(booking);
+    return;
+  }
+  const reject = event.target.closest('#rejectBtn');
+  if (reject) {
+    const booking = await changeBookingStatus('rejected', requestCard?.dataset.bookingId);
+    if (!booking) return;
+    requestCard.style.opacity = '.35';
+    requestCard.style.pointerEvents = 'none';
+    const timer = document.querySelector('.timer');
+    if (timer) timer.textContent = 'Declined';
+  }
 });
 
 let driverNavigationMap=null;
@@ -451,7 +473,9 @@ function openDriverNavigation(order){
   if(!holder)return;
   const next=order.status==='accepted'?['pickup','Mark arrived at pickup']:order.status==='pickup'?['in_transit','Start delivery']:order.status==='in_transit'?['delivered','Mark delivered']:null;
   holder.innerHTML=`<article class="driver-navigation-card"><div class="driver-navigation-head"><div><small>LIVE NAVIGATION · #HLR-${String(order.id).padStart(4,'0')}</small><h2>${order.status==='delivered'?'Delivery completed':next?'Navigate your delivery':'Delivery update'}</h2><p>${safe(order.pickup)} <i data-lucide="arrow-right"></i> ${safe(order.drop_location)}</p></div><span>${order.status.replace('_',' ')}</span></div><div class="driver-live-map-shell"><div id="driverLiveMap"></div><div class="driver-map-label"><i data-lucide="navigation"></i><span><small>LIVE DRIVER POSITION</small><b>${order.status==='accepted'?'Heading to pickup':order.status==='pickup'?'At pickup':order.status==='in_transit'?'Heading to drop':'Delivered'}</b></span></div></div>${next?`<button class="accept driver-progress-btn" data-driver-progress="${next[0]}">${next[1]} <i data-lucide="arrow-right"></i></button>`:`<div class="driver-delivered-note"><i data-lucide="circle-check"></i> This delivery is complete and saved in Previous deliveries.</div>`}</article>`;
-  buildDriverNavigationMap(order);if(window.lucide)lucide.createIcons();
+  if(window.lucide)lucide.createIcons();
+  // Wait for the new map element to be visible before Leaflet measures it.
+  requestAnimationFrame(()=>buildDriverNavigationMap(order));
 }
 document.addEventListener('click',async event=>{
   if(event.target.closest('[data-driver-start-navigation]')){try{const response=await fetch(`/api/bookings/${activeBookingId}`);const booking=await response.json();if(response.ok)openDriverNavigation(booking);}catch(_){}}
@@ -1047,7 +1071,12 @@ async function loadDriverQueue(){
     if(!response.ok||!Array.isArray(bookings))return;
     const available=bookings.find(item=>item.status==='searching');
     const active=bookings.find(item=>['accepted','pickup','in_transit'].includes(item.status));
-    if(active){activeBookingId=active.id;return;}
+    if(active){
+      activeBookingId=active.id;
+      const ordersOpen=document.querySelector('[data-driver-section="orders"]')?.classList.contains('active');
+      if(ordersOpen && !document.getElementById('driverLiveMap')) openDriverNavigation(active);
+      return;
+    }
     if(available){
       const card=document.getElementById('requestCard');
       if(card&&card.dataset.bookingId!==String(available.id))populateDriverRequest(available);
