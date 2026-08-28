@@ -50,6 +50,38 @@ def persistent_accounts_enabled() -> bool:
     return bool(os.environ.get("BLOB_READ_WRITE_TOKEN"))
 
 
+def persistent_bookings_enabled() -> bool:
+    """Vercel functions have an ephemeral /tmp filesystem; keep live trips in Blob."""
+    return bool(os.environ.get("VERCEL")) and persistent_accounts_enabled()
+
+
+BOOKINGS_PATH = "haulr-bookings/index.json"
+
+
+def persistent_bookings() -> list[dict]:
+    if not persistent_bookings_enabled():
+        return []
+    try:
+        from vercel.blob import BlobClient
+        result = BlobClient().get(BOOKINGS_PATH, access="private", use_cache=False)
+        payload = json.loads(result.content.decode("utf-8"))
+        return payload if isinstance(payload, list) else []
+    except Exception as exc:
+        # The first live booking has no index yet, which is a normal empty state.
+        app.logger.info("Persistent booking read unavailable: %s", type(exc).__name__)
+        return []
+
+
+def save_persistent_bookings(bookings: list[dict]) -> None:
+    if not persistent_bookings_enabled():
+        return
+    from vercel.blob import BlobClient
+    BlobClient().put(
+        BOOKINGS_PATH, json.dumps(bookings, separators=(",", ":")).encode("utf-8"),
+        access="private", content_type="application/json", overwrite=True,
+    )
+
+
 def account_path(email: str) -> str:
     digest = hashlib.sha256(email.strip().lower().encode()).hexdigest()
     return f"haulr-accounts/{digest}.json"
@@ -508,6 +540,15 @@ def saved_places():
 def list_bookings():
     if not session.get("user_id"):
         return jsonify([])
+    if persistent_bookings_enabled():
+        records = persistent_bookings()
+        if signed_in_role() == "driver":
+            records = [row for row in records if row.get("status") == "searching" or row.get("driver_user_id") == session["user_id"]]
+            records.sort(key=lambda row: (row.get("status") != "searching", -int(row.get("id", 0))))
+        else:
+            records = [row for row in records if row.get("user_id") == session["user_id"]]
+            records.sort(key=lambda row: -int(row.get("id", 0)))
+        return jsonify(records[:50])
     with connection() as db:
         if signed_in_role() == "driver":
             rows = db.execute("""SELECT * FROM bookings WHERE status = 'searching' OR driver_user_id = ?
@@ -522,6 +563,12 @@ def list_bookings():
 def get_booking(booking_id: int):
     if not session.get("user_id"):
         return jsonify({"error": "Sign in to track an order"}), 401
+    if persistent_bookings_enabled():
+        row = next((item for item in persistent_bookings() if int(item.get("id", 0)) == booking_id), None)
+        permitted = row and ((signed_in_role() == "driver" and (row.get("status") == "searching" or row.get("driver_user_id") == session["user_id"])) or (signed_in_role() != "driver" and row.get("user_id") == session["user_id"]))
+        if not permitted:
+            return jsonify({"error": "Order not found in your account"}), 404
+        return jsonify(row)
     with connection() as db:
         if signed_in_role() == "driver":
             row = db.execute("SELECT * FROM bookings WHERE id = ? AND (status = 'searching' OR driver_user_id = ?)", (booking_id, session["user_id"])).fetchone()
@@ -581,6 +628,25 @@ def create_booking():
     payment_status = "due_on_delivery" if is_cash else "paid"
     payment_reference = None if is_cash else f"PAY{now[:10].replace('-', '')}{secrets.token_hex(4).upper()}"
     paid_at = None if is_cash else now
+    if persistent_bookings_enabled():
+        # Timestamp + random suffix stays unique across separate Vercel functions.
+        booking_id = int(datetime.now(timezone.utc).timestamp() * 1000) * 1000 + secrets.randbelow(1000)
+        row = {
+            "id": booking_id, "pickup": data["pickup"].strip(), "drop_location": data["drop_location"].strip(),
+            "load_type": data["load_type"], "weight": weight, "phone": data["phone"].strip(),
+            "description": data.get("description", "").strip(), "vehicle": data["vehicle"], "fare": fare,
+            "status": "searching", "driver_name": None, "vehicle_number": None, "driver_user_id": None,
+            "created_at": now, "schedule": data.get("schedule", "now"), "helpers": int(data.get("helpers", 0)),
+            "payment_method": data.get("payment_method", "UPI"), "distance_km": float(data.get("distance_km", 0)),
+            "user_id": session["user_id"], "pickup_lat": float(data.get("pickup_lat", 0)),
+            "pickup_lng": float(data.get("pickup_lng", 0)), "drop_lat": float(data.get("drop_lat", 0)),
+            "drop_lng": float(data.get("drop_lng", 0)), "payment_status": payment_status,
+            "payment_reference": payment_reference, "paid_at": paid_at,
+        }
+        records = persistent_bookings()
+        records.append(row)
+        save_persistent_bookings(records)
+        return jsonify(row), 201
     with connection() as db:
         cursor = db.execute(
             """INSERT INTO bookings
@@ -633,6 +699,22 @@ def update_status(booking_id: int):
     if signed_in_role() != "driver":
         return jsonify({"error": "Only a driver can update delivery progress"}), 403
     profile = session.get("user_profile") or {}
+    if persistent_bookings_enabled():
+        records = persistent_bookings()
+        row = next((item for item in records if int(item.get("id", 0)) == booking_id), None)
+        if not row:
+            return jsonify({"error": "Booking not found"}), 404
+        if status == "accepted" and row.get("status") != "searching":
+            return jsonify({"error": "This request is no longer available"}), 409
+        if status != "accepted" and row.get("driver_user_id") not in (None, session["user_id"]):
+            return jsonify({"error": "This trip belongs to another driver"}), 403
+        row["status"] = status
+        if status == "accepted":
+            row["driver_name"] = profile.get("name") or row.get("driver_name")
+            row["vehicle_number"] = data.get("vehicle_number") or row.get("vehicle_number") or "Vehicle verification pending"
+            row["driver_user_id"] = session["user_id"]
+        save_persistent_bookings(records)
+        return jsonify(row)
     with connection() as db:
         current = db.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,)).fetchone()
         if not current:
