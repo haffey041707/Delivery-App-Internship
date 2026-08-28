@@ -410,6 +410,23 @@ function renderDriverQueueList(bookings, selectedId=activeBookingId) {
   list.innerHTML=requests.map(item=>`<button type="button" class="driver-queue-item ${Number(selectedId)===item.id?'selected':''}" data-driver-booking="${item.id}"><span><i data-lucide="package-search"></i></span><div><b>#HLR-${String(item.id).padStart(4,'0')} · ${safe(item.load_type)}</b><small>${safe(item.pickup)} <i data-lucide="arrow-right"></i> ${safe(item.drop_location)}</small></div><strong>₹${item.fare}</strong></button>`).join('');
   if(window.lucide)lucide.createIcons();
 }
+function renderDriverOrderInsights(bookings){
+  const available=bookings.filter(item=>item.status==='searching');
+  const active=bookings.find(item=>['accepted','pickup','in_transit'].includes(item.status));
+  const availability=document.getElementById('driverAvailabilityText');
+  const availableCount=document.getElementById('driverAvailableCount');
+  const activeTitle=document.getElementById('driverActiveTripTitle');
+  const activeText=document.getElementById('driverActiveTripText');
+  const activeAction=document.getElementById('driverActiveTripAction');
+  if(availability)availability.textContent=`Online · ${available.length} request${available.length===1?'':'s'} waiting`;
+  if(availableCount)availableCount.textContent=String(available.length);
+  if(activeTitle)activeTitle.textContent=active?'Active delivery in progress':'No active delivery';
+  if(activeText)activeText.textContent=active?`#HLR-${String(active.id).padStart(4,'0')} · ${active.status.replace('_',' ')}`:'Accept a request to begin live navigation.';
+  if(activeAction){
+    activeAction.dataset.activeBooking=active?.id||'';
+    activeAction.textContent=active?'Open live navigation':'View previous deliveries';
+  }
+}
 function populateDriverRequest(booking) {
   if (!booking) return;
   activeBookingId = booking.id;
@@ -447,6 +464,25 @@ async function changeBookingStatus(status, bookingId = activeBookingId) {
 // The request card is moved into the driver Orders page at runtime, so use one
 // delegated handler that remains valid after the layout changes.
 document.addEventListener('click', async event => {
+  const availabilityToggle=event.target.closest('[data-driver-set-online]');
+  if(availabilityToggle){
+    const online=availabilityToggle.dataset.driverSetOnline!=='offline';
+    availabilityToggle.dataset.driverSetOnline=online?'offline':'online';
+    availabilityToggle.innerHTML=online?'<i data-lucide="wifi-off"></i> Go offline':'<i data-lucide="wifi"></i> Go online';
+    const text=document.getElementById('driverAvailabilityText');
+    if(text)text.textContent=online?'Online · ready for requests':'Offline · requests paused';
+    availabilityToggle.closest('.driver-work-card')?.classList.toggle('is-offline',online);
+    if(window.lucide)lucide.createIcons();
+    return;
+  }
+  const activeTrip=event.target.closest('[data-active-booking]');
+  if(activeTrip){
+    const id=Number(activeTrip.dataset.activeBooking);
+    const booking=driverQueueBookings.find(item=>item.id===id);
+    if(booking)openDriverNavigation(booking);
+    else document.querySelector('[data-driver-view="deliveries"]')?.click();
+    return;
+  }
   const request = event.target.closest('[data-driver-booking]');
   if(request){
     const booking=driverQueueBookings.find(item=>item.id===Number(request.dataset.driverBooking));
@@ -1103,6 +1139,7 @@ async function loadDriverQueue(){
     const available=bookings.find(item=>item.status==='searching');
     const active=bookings.find(item=>['accepted','pickup','in_transit'].includes(item.status));
     renderDriverQueueList(bookings, activeBookingId);
+    renderDriverOrderInsights(bookings);
     if(active){
       activeBookingId=active.id;
       const ordersOpen=document.querySelector('[data-driver-section="orders"]')?.classList.contains('active');
@@ -1135,9 +1172,9 @@ function initializeDriverPortal(driverView, user) {
         <div class="driver-section-head"><small>LIVE WORK</small><h1>Orders</h1><p>Review new loading requests and your active delivery trips.</p></div>
         <div class="driver-request-list-wrap"><div class="driver-request-list-head"><small>AVAILABLE REQUESTS</small><b>Choose a request to review</b></div><div class="driver-request-list" id="driverRequestList"></div></div>
         <div class="driver-live-request"></div>
-        <div class="driver-order-grid">
-          <article><span><i data-lucide="radio-tower"></i></span><small>AVAILABILITY</small><h2>Ready for your next request</h2><p>Keep your driver profile verified and stay online to receive nearby loads.</p></article>
-          <article><span><i data-lucide="route"></i></span><small>ACTIVE TRIPS</small><h2>Trip updates in one place</h2><p>Accepted pickup and delivery progress will appear here automatically.</p></article>
+        <div class="driver-order-grid driver-work-grid">
+          <article class="driver-work-card"><div class="driver-work-top"><span><i data-lucide="radio-tower"></i></span><b id="driverAvailableCount">0</b></div><small>AVAILABILITY</small><h2 id="driverAvailabilityText">Online · checking requests</h2><p>Stay online to receive nearby verified customer loads.</p><button type="button" data-driver-set-online="offline"><i data-lucide="wifi-off"></i> Go offline</button></article>
+          <article class="driver-work-card"><div class="driver-work-top"><span><i data-lucide="route"></i></span><b class="active-trip-dot"></b></div><small>ACTIVE TRIP</small><h2 id="driverActiveTripTitle">No active delivery</h2><p id="driverActiveTripText">Accept a request to begin live navigation.</p><button type="button" class="secondary" id="driverActiveTripAction" data-active-booking=""><i data-lucide="history"></i> View previous deliveries</button></article>
         </div>
       </section>
       <section class="driver-section driver-utility" data-driver-section="deliveries">
