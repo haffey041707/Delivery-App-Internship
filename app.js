@@ -394,6 +394,7 @@ const requestCard = document.getElementById('requestCard');
 function populateDriverRequest(booking) {
   if (!booking) return;
   activeBookingId = booking.id;
+  requestCard.dataset.bookingId = booking.id;
   document.getElementById('requestFare').innerHTML = `₹${booking.fare} <small>estimated</small>`;
   document.getElementById('requestPickup').textContent = booking.pickup;
   document.getElementById('requestDrop').textContent = booking.drop_location;
@@ -401,21 +402,60 @@ function populateDriverRequest(booking) {
 }
 
 async function changeBookingStatus(status) {
-  if (!activeBookingId) return true;
+  if (!activeBookingId) return null;
   const response = await fetch(`/api/bookings/${activeBookingId}/status`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status}) });
-  if(response.ok)loadNotifications();
-  return response.ok;
+  if(!response.ok) return null;
+  const booking=await response.json();
+  loadNotifications();
+  return booking;
 }
 
 document.getElementById('acceptBtn').addEventListener('click', async () => {
-  if (!await changeBookingStatus('accepted')) return;
-  requestCard.innerHTML = '<div style="text-align:center;padding:42px 10px"><div style="font-size:42px">✓</div><h2>Booking accepted</h2><p style="color:#6e756f">Navigate to ABC Market, Sector 11 for pickup.</p><button class="accept" style="padding:12px 25px;border-radius:8px">Start navigation</button></div>';
+  const booking=await changeBookingStatus('accepted');
+  if (!booking) return;
+  requestCard.innerHTML = `<div class="driver-accepted-state"><span><i data-lucide="circle-check"></i></span><div><small>ORDER ACCEPTED</small><h2>Ready for pickup</h2><p>Open navigation to ${safe(booking.pickup)}.</p></div><button class="accept" type="button" data-driver-start-navigation>Start navigation <i data-lucide="arrow-right"></i></button></div>`;
+  if(window.lucide)lucide.createIcons();
 });
 document.getElementById('rejectBtn').addEventListener('click', async () => {
   if (!await changeBookingStatus('rejected')) return;
   requestCard.style.opacity = '.35';
   requestCard.style.pointerEvents = 'none';
   document.querySelector('.timer').textContent = 'Declined';
+});
+
+let driverNavigationMap=null;
+let driverNavigationTimer=null;
+async function buildDriverNavigationMap(order){
+  const mapElement=document.getElementById('driverLiveMap');
+  if(typeof L==='undefined'||!mapElement)return;
+  if(driverNavigationTimer)clearInterval(driverNavigationTimer);
+  if(driverNavigationMap)driverNavigationMap.remove();
+  const start=Number(order.pickup_lat)&&Number(order.pickup_lng)?[Number(order.pickup_lat),Number(order.pickup_lng)]:[23.2248,72.6492];
+  const end=Number(order.drop_lat)&&Number(order.drop_lng)?[Number(order.drop_lat),Number(order.drop_lng)]:[23.2156,72.6369];
+  driverNavigationMap=L.map('driverLiveMap',{zoomControl:false,scrollWheelZoom:false}).setView(start,13);
+  L.tileLayer(mapTileUrl,mapTileOptions).addTo(driverNavigationMap);
+  L.control.zoom({position:'bottomright'}).addTo(driverNavigationMap);
+  L.marker(start,{icon:pinIcon()}).addTo(driverNavigationMap).bindPopup(`Pickup · ${safe(order.pickup)}`);
+  L.marker(end,{icon:pinIcon('drop')}).addTo(driverNavigationMap).bindPopup(`Drop · ${safe(order.drop_location)}`);
+  let points=[start,end];
+  try{const response=await fetch(`https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`);const data=await response.json();if(data.routes?.[0])points=data.routes[0].geometry.coordinates.map(([lng,lat])=>[lat,lng]);}catch(_){/* retain direct route */}
+  L.polyline(points,{color:'#fff',weight:10,opacity:.94}).addTo(driverNavigationMap);L.polyline(points,{color:'#6856D9',weight:5}).addTo(driverNavigationMap);
+  let index=Math.min(points.length-1,Math.floor(({accepted:.08,pickup:.14,in_transit:.55,delivered:1}[order.status]??.08)*points.length));
+  const vehicle=L.marker(points[index],{icon:L.divIcon({className:'',html:'<div class="vehicle-marker"><i data-lucide="truck"></i></div>',iconSize:[42,42],iconAnchor:[21,21]}),zIndexOffset:500}).addTo(driverNavigationMap);
+  driverNavigationMap.fitBounds(L.latLngBounds(points),{padding:[30,30],maxZoom:14});
+  if(['accepted','pickup','in_transit'].includes(order.status)&&points.length>2)driverNavigationTimer=setInterval(()=>{index=index>=points.length-2?Math.floor(points.length*.1):index+1;vehicle.setLatLng(points[index]);},750);
+  setTimeout(()=>driverNavigationMap?.invalidateSize(),120);
+}
+function openDriverNavigation(order){
+  const holder=document.querySelector('.driver-live-request');
+  if(!holder)return;
+  const next=order.status==='accepted'?['pickup','Mark arrived at pickup']:order.status==='pickup'?['in_transit','Start delivery']:order.status==='in_transit'?['delivered','Mark delivered']:null;
+  holder.innerHTML=`<article class="driver-navigation-card"><div class="driver-navigation-head"><div><small>LIVE NAVIGATION · #HLR-${String(order.id).padStart(4,'0')}</small><h2>${order.status==='delivered'?'Delivery completed':next?'Navigate your delivery':'Delivery update'}</h2><p>${safe(order.pickup)} <i data-lucide="arrow-right"></i> ${safe(order.drop_location)}</p></div><span>${order.status.replace('_',' ')}</span></div><div class="driver-live-map-shell"><div id="driverLiveMap"></div><div class="driver-map-label"><i data-lucide="navigation"></i><span><small>LIVE DRIVER POSITION</small><b>${order.status==='accepted'?'Heading to pickup':order.status==='pickup'?'At pickup':order.status==='in_transit'?'Heading to drop':'Delivered'}</b></span></div></div>${next?`<button class="accept driver-progress-btn" data-driver-progress="${next[0]}">${next[1]} <i data-lucide="arrow-right"></i></button>`:`<div class="driver-delivered-note"><i data-lucide="circle-check"></i> This delivery is complete and saved in Previous deliveries.</div>`}</article>`;
+  buildDriverNavigationMap(order);if(window.lucide)lucide.createIcons();
+}
+document.addEventListener('click',async event=>{
+  if(event.target.closest('[data-driver-start-navigation]')){try{const response=await fetch(`/api/bookings/${activeBookingId}`);const booking=await response.json();if(response.ok)openDriverNavigation(booking);}catch(_){}}
+  const progress=event.target.closest('[data-driver-progress]');if(progress){const booking=await changeBookingStatus(progress.dataset.driverProgress);if(booking)openDriverNavigation(booking);}
 });
 
 let seconds = 28;
@@ -993,7 +1033,26 @@ function renderDriverWorkspace(user) {
   if (card && !card.querySelector('.driver-onboarding-note')) {
     card.insertAdjacentHTML('beforeend', '<p class="driver-onboarding-note"><i data-lucide="shield-check"></i> Complete document verification to receive live booking requests.</p>');
   }
+  loadDriverQueue();
+  if (window.driverQueueTimer) clearInterval(window.driverQueueTimer);
+  window.driverQueueTimer=setInterval(loadDriverQueue, 12000);
   setTimeout(() => showView('driver'), 0);
+}
+
+async function loadDriverQueue(){
+  if(currentUser?.role!=='driver')return;
+  try{
+    const response=await fetch('/api/bookings');
+    const bookings=await response.json();
+    if(!response.ok||!Array.isArray(bookings))return;
+    const available=bookings.find(item=>item.status==='searching');
+    const active=bookings.find(item=>['accepted','pickup','in_transit'].includes(item.status));
+    if(active){activeBookingId=active.id;return;}
+    if(available){
+      const card=document.getElementById('requestCard');
+      if(card&&card.dataset.bookingId!==String(available.id))populateDriverRequest(available);
+    }
+  }catch(_){/* Driver queue will retry automatically. */}
 }
 
 function initializeDriverPortal(driverView, user) {
@@ -1068,6 +1127,7 @@ function initializeDriverPortal(driverView, user) {
     driverView.querySelectorAll('[data-driver-view]').forEach(button => button.classList.toggle('active', button.dataset.driverView === section));
     driverView.querySelector('.dash-content')?.scrollTo({top:0, behavior:'smooth'});
     if (window.lucide) lucide.createIcons();
+    if(section==='orders') loadDriverQueue();
   };
   driverView.querySelectorAll('[data-driver-view]').forEach(button => button.addEventListener('click', () => select(button.dataset.driverView)));
   driverView.querySelectorAll('[data-driver-home]').forEach(button => button.addEventListener('click', () => select('home')));

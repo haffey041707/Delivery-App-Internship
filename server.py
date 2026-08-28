@@ -188,6 +188,7 @@ def init_database() -> None:
             ,"payment_status": "TEXT DEFAULT 'pending'"
             ,"payment_reference": "TEXT"
             ,"paid_at": "TEXT"
+            ,"driver_user_id": "INTEGER"
         }.items():
             if name not in existing:
                 db.execute(f"ALTER TABLE bookings ADD COLUMN {name} {definition}")
@@ -201,6 +202,10 @@ if os.environ.get("VERCEL"):
 
 def booking_dict(row: sqlite3.Row) -> dict:
     return dict(row)
+
+
+def signed_in_role() -> str:
+    return (session.get("user_profile") or {}).get("role", "customer")
 
 
 def register_session(user_id: int) -> None:
@@ -504,7 +509,12 @@ def list_bookings():
     if not session.get("user_id"):
         return jsonify([])
     with connection() as db:
-        rows = db.execute("SELECT * FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 50", (session["user_id"],)).fetchall()
+        if signed_in_role() == "driver":
+            rows = db.execute("""SELECT * FROM bookings WHERE status = 'searching' OR driver_user_id = ?
+                              ORDER BY CASE WHEN status = 'searching' THEN 0 ELSE 1 END, id DESC LIMIT 50""",
+                              (session["user_id"],)).fetchall()
+        else:
+            rows = db.execute("SELECT * FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 50", (session["user_id"],)).fetchall()
     return jsonify([booking_dict(row) for row in rows])
 
 
@@ -513,7 +523,10 @@ def get_booking(booking_id: int):
     if not session.get("user_id"):
         return jsonify({"error": "Sign in to track an order"}), 401
     with connection() as db:
-        row = db.execute("SELECT * FROM bookings WHERE id = ? AND user_id = ?", (booking_id, session["user_id"])).fetchone()
+        if signed_in_role() == "driver":
+            row = db.execute("SELECT * FROM bookings WHERE id = ? AND (status = 'searching' OR driver_user_id = ?)", (booking_id, session["user_id"])).fetchone()
+        else:
+            row = db.execute("SELECT * FROM bookings WHERE id = ? AND user_id = ?", (booking_id, session["user_id"])).fetchone()
     if not row:
         return jsonify({"error": "Order not found in your account"}), 404
     return jsonify(booking_dict(row))
@@ -617,12 +630,22 @@ def update_status(booking_id: int):
     status = data.get("status")
     if status not in allowed:
         return jsonify({"error": "Invalid booking status"}), 400
-    driver = "Rahul Sharma" if status == "accepted" else data.get("driver_name")
-    number = "GJ 18 BX 4821" if status == "accepted" else data.get("vehicle_number")
+    if signed_in_role() != "driver":
+        return jsonify({"error": "Only a driver can update delivery progress"}), 403
+    profile = session.get("user_profile") or {}
     with connection() as db:
+        current = db.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,)).fetchone()
+        if not current:
+            return jsonify({"error": "Booking not found"}), 404
+        if status == "accepted" and current["status"] != "searching":
+            return jsonify({"error": "This request is no longer available"}), 409
+        if status != "accepted" and current["driver_user_id"] not in (None, session["user_id"]):
+            return jsonify({"error": "This trip belongs to another driver"}), 403
+        driver = profile.get("name") if status == "accepted" else data.get("driver_name")
+        number = data.get("vehicle_number") or "Vehicle verification pending"
         result = db.execute(
-            "UPDATE bookings SET status = ?, driver_name = COALESCE(?, driver_name), vehicle_number = COALESCE(?, vehicle_number) WHERE id = ?",
-            (status, driver, number, booking_id),
+            "UPDATE bookings SET status = ?, driver_name = COALESCE(?, driver_name), vehicle_number = COALESCE(?, vehicle_number), driver_user_id = COALESCE(?, driver_user_id) WHERE id = ?",
+            (status, driver, number, session["user_id"] if status == "accepted" else None, booking_id),
         )
         if not result.rowcount:
             return jsonify({"error": "Booking not found"}), 404
