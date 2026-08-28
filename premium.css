@@ -1147,3 +1147,7 @@ body.driver-mode .side-nav{background:linear-gradient(165deg,#28205A,#40318E)!im
   .driver-summary-card{min-height:0;padding:16px}.driver-summary-card .driver-card-heading{align-items:flex-start}.driver-summary-card .driver-card-heading h2{font-size:14px}.driver-summary-card>span{width:32px;height:32px}.driver-summary-card>span svg{width:16px}.driver-summary-card strong{margin-top:14px;font-size:28px}.driver-summary-card p{font-size:7px}
   .driver-days-ring{width:96px;height:96px}.driver-days-ring>div{width:66px;height:66px}.driver-days-ring strong{font-size:21px}
 }
+
+/* Rebalanced chart interiors: every label remains inside its own square tile. */
+.driver-spend-card{display:flex;flex-direction:column}.driver-spend-card .driver-card-heading{align-items:flex-start}.driver-donut{flex:0 0 auto}.driver-legend{justify-content:center;gap:16px;margin-top:auto}.driver-legend span{white-space:nowrap}.driver-days-card .driver-card-heading{align-items:flex-start}.driver-days-ring{flex:0 0 auto}.driver-days-card .driver-card-heading>b{max-width:92px;text-align:center}.driver-status-orbit{flex:0 0 auto}.driver-status-foot{margin-top:auto}
+@media(max-width:900px){.driver-spend-card .driver-card-heading>b{padding:5px 7px;font-size:10px}.driver-legend{gap:7px}.driver-legend span{gap:3px}.driver-legend b{font-size:7px}.driver-days-card .driver-card-heading>b{font-size:7px;padding:5px 6px}.driver-days-ring{margin-top:auto;margin-bottom:0}.driver-status-orbit{margin:auto}.driver-status-foot{margin-top:0}}
