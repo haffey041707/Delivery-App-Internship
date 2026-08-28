@@ -1139,10 +1139,11 @@ body.driver-mode .side-nav{background:linear-gradient(165deg,#28205A,#40318E)!im
 /* Keep driver Home analytics in the same two-column layout as customer Home. */
 @media(max-width:900px){
   .driver-home-insights{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-  .driver-spend-card,.driver-jarvis-card{min-height:270px;padding:16px}
+  .driver-home-insights>article{aspect-ratio:1/1;min-height:0}
+  .driver-spend-card,.driver-jarvis-card{min-height:0;padding:16px}
   .driver-card-heading h2{font-size:15px}
   .driver-donut{width:112px;height:112px;margin:15px auto}.driver-donut>div{width:78px;height:78px}.driver-donut strong{font-size:18px}.driver-legend{font-size:7px}
   .driver-status-orbit{width:138px;height:138px}.driver-status-copy strong{font-size:21px}.driver-status-foot{gap:5px}.driver-status-foot span{padding:7px 8px;font-size:7px}
-  .driver-summary-card{min-height:174px;padding:16px}.driver-summary-card .driver-card-heading{align-items:flex-start}.driver-summary-card .driver-card-heading h2{font-size:14px}.driver-summary-card>span{width:32px;height:32px}.driver-summary-card>span svg{width:16px}.driver-summary-card strong{margin-top:14px;font-size:28px}.driver-summary-card p{font-size:7px}
+  .driver-summary-card{min-height:0;padding:16px}.driver-summary-card .driver-card-heading{align-items:flex-start}.driver-summary-card .driver-card-heading h2{font-size:14px}.driver-summary-card>span{width:32px;height:32px}.driver-summary-card>span svg{width:16px}.driver-summary-card strong{margin-top:14px;font-size:28px}.driver-summary-card p{font-size:7px}
   .driver-days-ring{width:96px;height:96px}.driver-days-ring>div{width:66px;height:66px}.driver-days-ring strong{font-size:21px}
 }
