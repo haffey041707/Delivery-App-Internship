@@ -391,10 +391,31 @@ document.getElementById('trackBtn').addEventListener('click', event => {
 });
 
 const requestCard = document.getElementById('requestCard');
+let driverQueueBookings=[];
+
+function renderDriverQueueList(bookings, selectedId=activeBookingId) {
+  const list=document.getElementById('driverRequestList');
+  if(!list)return;
+  const requests=bookings.filter(item=>item.status==='searching');
+  if(!requests.length){
+    list.innerHTML='<div class="driver-queue-empty"><i data-lucide="radar"></i><span>No new booking requests right now</span></div>';
+    if(requestCard){
+      requestCard.dataset.bookingId='';
+      requestCard.querySelector('#acceptBtn')?.setAttribute('disabled','disabled');
+      requestCard.querySelector('#rejectBtn')?.setAttribute('disabled','disabled');
+    }
+    if(window.lucide)lucide.createIcons();
+    return;
+  }
+  list.innerHTML=requests.map(item=>`<button type="button" class="driver-queue-item ${Number(selectedId)===item.id?'selected':''}" data-driver-booking="${item.id}"><span><i data-lucide="package-search"></i></span><div><b>#HLR-${String(item.id).padStart(4,'0')} · ${safe(item.load_type)}</b><small>${safe(item.pickup)} <i data-lucide="arrow-right"></i> ${safe(item.drop_location)}</small></div><strong>₹${item.fare}</strong></button>`).join('');
+  if(window.lucide)lucide.createIcons();
+}
 function populateDriverRequest(booking) {
   if (!booking) return;
   activeBookingId = booking.id;
   requestCard.dataset.bookingId = booking.id;
+  requestCard.querySelector('#acceptBtn')?.removeAttribute('disabled');
+  requestCard.querySelector('#rejectBtn')?.removeAttribute('disabled');
   document.getElementById('requestFare').innerHTML = `₹${booking.fare} <small>estimated</small>`;
   document.getElementById('requestPickup').textContent = booking.pickup;
   document.getElementById('requestDrop').textContent = booking.drop_location;
@@ -426,6 +447,15 @@ async function changeBookingStatus(status, bookingId = activeBookingId) {
 // The request card is moved into the driver Orders page at runtime, so use one
 // delegated handler that remains valid after the layout changes.
 document.addEventListener('click', async event => {
+  const request = event.target.closest('[data-driver-booking]');
+  if(request){
+    const booking=driverQueueBookings.find(item=>item.id===Number(request.dataset.driverBooking));
+    if(booking){
+      populateDriverRequest(booking);
+      renderDriverQueueList(driverQueueBookings, booking.id);
+    }
+    return;
+  }
   const accept = event.target.closest('#acceptBtn');
   if (accept) {
     accept.disabled = true;
@@ -1069,8 +1099,10 @@ async function loadDriverQueue(){
     const response=await fetch('/api/bookings');
     const bookings=await response.json();
     if(!response.ok||!Array.isArray(bookings))return;
+    driverQueueBookings=bookings;
     const available=bookings.find(item=>item.status==='searching');
     const active=bookings.find(item=>['accepted','pickup','in_transit'].includes(item.status));
+    renderDriverQueueList(bookings, activeBookingId);
     if(active){
       activeBookingId=active.id;
       const ordersOpen=document.querySelector('[data-driver-section="orders"]')?.classList.contains('active');
@@ -1101,6 +1133,7 @@ function initializeDriverPortal(driverView, user) {
     home.insertAdjacentHTML('afterend', `
       <section class="driver-section driver-utility" data-driver-section="orders">
         <div class="driver-section-head"><small>LIVE WORK</small><h1>Orders</h1><p>Review new loading requests and your active delivery trips.</p></div>
+        <div class="driver-request-list-wrap"><div class="driver-request-list-head"><small>AVAILABLE REQUESTS</small><b>Choose a request to review</b></div><div class="driver-request-list" id="driverRequestList"></div></div>
         <div class="driver-live-request"></div>
         <div class="driver-order-grid">
           <article><span><i data-lucide="radio-tower"></i></span><small>AVAILABILITY</small><h2>Ready for your next request</h2><p>Keep your driver profile verified and stay online to receive nearby loads.</p></article>
