@@ -413,8 +413,8 @@ async function changeBookingStatus(status) {
 document.getElementById('acceptBtn').addEventListener('click', async () => {
   const booking=await changeBookingStatus('accepted');
   if (!booking) return;
-  requestCard.innerHTML = `<div class="driver-accepted-state"><span><i data-lucide="circle-check"></i></span><div><small>ORDER ACCEPTED</small><h2>Ready for pickup</h2><p>Open navigation to ${safe(booking.pickup)}.</p></div><button class="accept" type="button" data-driver-start-navigation>Start navigation <i data-lucide="arrow-right"></i></button></div>`;
-  if(window.lucide)lucide.createIcons();
+  // Drivers go directly to the live route after accepting the load.
+  openDriverNavigation(booking);
 });
 document.getElementById('rejectBtn').addEventListener('click', async () => {
   if (!await changeBookingStatus('rejected')) return;
