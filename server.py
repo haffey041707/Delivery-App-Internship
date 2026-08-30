@@ -221,6 +221,7 @@ def init_database() -> None:
             ,"payment_reference": "TEXT"
             ,"paid_at": "TEXT"
             ,"driver_user_id": "INTEGER"
+            ,"delivered_at": "TEXT"
         }.items():
             if name not in existing:
                 db.execute(f"ALTER TABLE bookings ADD COLUMN {name} {definition}")
@@ -713,6 +714,8 @@ def update_status(booking_id: int):
             row["driver_name"] = profile.get("name") or row.get("driver_name")
             row["vehicle_number"] = data.get("vehicle_number") or row.get("vehicle_number") or "Vehicle verification pending"
             row["driver_user_id"] = session["user_id"]
+        if status == "delivered":
+            row["delivered_at"] = datetime.now(timezone.utc).isoformat()
         save_persistent_bookings(records)
         return jsonify(row)
     with connection() as db:
@@ -731,6 +734,8 @@ def update_status(booking_id: int):
         )
         if not result.rowcount:
             return jsonify({"error": "Booking not found"}), 404
+        if status == "delivered":
+            db.execute("UPDATE bookings SET delivered_at = ? WHERE id = ?", (datetime.now(timezone.utc).isoformat(), booking_id))
         row = db.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,)).fetchone()
         if row["user_id"]:
             status_messages = {

@@ -427,6 +427,33 @@ function renderDriverOrderInsights(bookings){
     activeAction.textContent=active?'Open live navigation':'View previous deliveries';
   }
 }
+function driverDeliveryDate(value){
+  if(!value)return 'Delivery time not recorded';
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return 'Delivery time not recorded';
+  return date.toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function renderDriverDeliveryReceipt(booking){
+  const receipt=document.getElementById('driverDeliveryReceipt');
+  if(!receipt||!booking)return;
+  receipt.hidden=false;
+  receipt.innerHTML=`<div class="driver-receipt-head"><div><small>DELIVERY RECEIPT · #HLR-${String(booking.id).padStart(4,'0')}</small><h2>${safe(booking.load_type)} delivered</h2></div><button type="button" class="driver-receipt-close" data-close-driver-receipt aria-label="Close receipt"><i data-lucide="x"></i></button></div><div class="driver-receipt-route"><span><i data-lucide="map-pin"></i>${safe(booking.pickup)}</span><i data-lucide="arrow-down"></i><span><i data-lucide="map-pin"></i>${safe(booking.drop_location)}</span></div><div class="driver-receipt-grid"><div><small>Delivery charge</small><strong>₹${booking.fare}</strong></div><div><small>Delivered on</small><strong>${driverDeliveryDate(booking.delivered_at||booking.created_at)}</strong></div><div><small>Payment</small><strong>${safe(booking.payment_method||'Payment pending')}</strong></div><div><small>Load</small><strong>${safe(booking.weight)} kg</strong></div></div>`;
+  if(window.lucide)lucide.createIcons();
+  receipt.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function renderDriverDeliveryHistory(bookings){
+  const list=document.getElementById('driverDeliveryHistory');
+  const receipt=document.getElementById('driverDeliveryReceipt');
+  if(!list)return;
+  const delivered=bookings.filter(item=>item.status==='delivered').sort((a,b)=>new Date(b.delivered_at||b.created_at)-new Date(a.delivered_at||a.created_at));
+  if(!delivered.length){
+    list.innerHTML='<div class="driver-history-empty"><i data-lucide="package-check"></i><b>No completed deliveries yet</b><small>Finished trips will appear here with their charge and delivery time.</small></div>';
+    if(receipt)receipt.hidden=true;
+  }else{
+    list.innerHTML=delivered.map(item=>`<button type="button" class="driver-delivery-row" data-driver-delivery="${item.id}"><span><i data-lucide="circle-check"></i></span><div><b>#HLR-${String(item.id).padStart(4,'0')} · ${safe(item.pickup)} <i data-lucide="arrow-right"></i> ${safe(item.drop_location)}</b><small>Delivered ${driverDeliveryDate(item.delivered_at||item.created_at)}</small></div><strong>₹${item.fare}</strong><i data-lucide="chevron-right"></i></button>`).join('');
+  }
+  if(window.lucide)lucide.createIcons();
+}
 function populateDriverRequest(booking) {
   if (!booking) return;
   activeBookingId = booking.id;
@@ -481,6 +508,17 @@ document.addEventListener('click', async event => {
     const booking=driverQueueBookings.find(item=>item.id===id);
     if(booking)openDriverNavigation(booking);
     else document.querySelector('[data-driver-view="deliveries"]')?.click();
+    return;
+  }
+  const deliveredItem=event.target.closest('[data-driver-delivery]');
+  if(deliveredItem){
+    const booking=driverQueueBookings.find(item=>item.id===Number(deliveredItem.dataset.driverDelivery));
+    if(booking)renderDriverDeliveryReceipt(booking);
+    return;
+  }
+  if(event.target.closest('[data-close-driver-receipt]')){
+    const receipt=document.getElementById('driverDeliveryReceipt');
+    if(receipt)receipt.hidden=true;
     return;
   }
   const request = event.target.closest('[data-driver-booking]');
@@ -1140,6 +1178,7 @@ async function loadDriverQueue(){
     const active=bookings.find(item=>['accepted','pickup','in_transit'].includes(item.status));
     renderDriverQueueList(bookings, activeBookingId);
     renderDriverOrderInsights(bookings);
+    renderDriverDeliveryHistory(bookings);
     if(active){
       activeBookingId=active.id;
       const ordersOpen=document.querySelector('[data-driver-section="orders"]')?.classList.contains('active');
@@ -1179,7 +1218,8 @@ function initializeDriverPortal(driverView, user) {
       </section>
       <section class="driver-section driver-utility" data-driver-section="deliveries">
         <div class="driver-section-head"><small>TRIP HISTORY</small><h1>Previous deliveries</h1><p>Your completed trips and earnings summary.</p></div>
-        <div class="driver-history driver-history-fallback"><article><span><i data-lucide="circle-check"></i></span><div><b>Sector 7 → Infocity</b><small>Completed today · 5.2 km</small></div><strong>₹280</strong></article><article><span><i data-lucide="circle-check"></i></span><div><b>Kudasan → Sargasan</b><small>Completed today · 3.7 km</small></div><strong>₹220</strong></article><article><span><i data-lucide="circle-check"></i></span><div><b>Sector 21 → Pethapur</b><small>Completed yesterday · 8.1 km</small></div><strong>₹410</strong></article></div>
+        <div class="driver-history" id="driverDeliveryHistory"></div>
+        <article class="driver-delivery-receipt" id="driverDeliveryReceipt" hidden></article>
       </section>
       <section class="driver-section driver-utility" data-driver-section="settings">
         <div class="driver-section-head"><small>DRIVER ACCOUNT</small><h1>Settings</h1><p>Manage availability, vehicle information and verification documents.</p></div>
@@ -1194,11 +1234,7 @@ function initializeDriverPortal(driverView, user) {
       requestPanel.classList.add('driver-request-panel');
       ordersPanel.querySelector('.driver-live-request')?.append(requestPanel);
     }
-    if (tripPanel && deliveriesPanel) {
-      tripPanel.classList.add('driver-trip-panel');
-      deliveriesPanel.querySelector('.driver-history-fallback')?.remove();
-      deliveriesPanel.append(tripPanel);
-    }
+    if (tripPanel && deliveriesPanel) tripPanel.remove();
     originalColumns?.remove();
     home.innerHTML = `
       <div class="driver-home-shell">
@@ -1226,7 +1262,7 @@ function initializeDriverPortal(driverView, user) {
     driverView.querySelectorAll('[data-driver-view]').forEach(button => button.classList.toggle('active', button.dataset.driverView === section));
     driverView.querySelector('.dash-content')?.scrollTo({top:0, behavior:'smooth'});
     if (window.lucide) lucide.createIcons();
-    if(section==='orders') loadDriverQueue();
+    if(section==='orders'||section==='deliveries') loadDriverQueue();
   };
   driverView.querySelectorAll('[data-driver-view]').forEach(button => button.addEventListener('click', () => select(button.dataset.driverView)));
   driverView.querySelectorAll('[data-driver-home]').forEach(button => button.addEventListener('click', () => select('home')));
