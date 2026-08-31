@@ -439,7 +439,7 @@ function renderDriverDeliveryReceipt(booking){
   receipt.hidden=false;
   receipt.innerHTML=`<div class="driver-receipt-head"><div><small>DELIVERY RECEIPT · #HLR-${String(booking.id).padStart(4,'0')}</small><h2>${safe(booking.load_type)} delivered</h2></div><button type="button" class="driver-receipt-close" data-close-driver-receipt aria-label="Close receipt"><i data-lucide="x"></i></button></div><div class="driver-receipt-route"><span><i data-lucide="map-pin"></i>${safe(booking.pickup)}</span><i data-lucide="arrow-down"></i><span><i data-lucide="map-pin"></i>${safe(booking.drop_location)}</span></div><div class="driver-receipt-grid"><div><small>Delivery charge</small><strong>₹${booking.fare}</strong></div><div><small>Delivered on</small><strong>${driverDeliveryDate(booking.delivered_at||booking.created_at)}</strong></div><div><small>Payment</small><strong>${safe(booking.payment_method||'Payment pending')}</strong></div><div><small>Load</small><strong>${safe(booking.weight)} kg</strong></div></div>`;
   if(window.lucide)lucide.createIcons();
-  receipt.scrollIntoView({behavior:'smooth',block:'nearest'});
+  receipt.scrollTop=0;
 }
 function renderDriverDeliveryHistory(bookings){
   const list=document.getElementById('driverDeliveryHistory');
