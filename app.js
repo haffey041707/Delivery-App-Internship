@@ -470,6 +470,7 @@ function showDriverSettingDetail(key){
   menu.querySelectorAll('[data-driver-setting]').forEach(item=>item.classList.toggle('active',item.dataset.driverSetting===key));
   detail.hidden=false;
   detail.innerHTML=`<button type="button" class="driver-settings-back" data-driver-settings-back><i data-lucide="arrow-left"></i> Settings</button><div class="driver-setting-detail-head"><span><i data-lucide="${page.icon}"></i></span><div><small>${page.eyebrow}</small><h2>${page.title}</h2><p>${page.text}</p></div></div><div class="driver-setting-detail-body">${page.body}</div>`;
+  detail.scrollTop=0;
   if(window.lucide)lucide.createIcons();
 }
 function populateDriverRequest(booking) {
