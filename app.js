@@ -454,6 +454,24 @@ function renderDriverDeliveryHistory(bookings){
   }
   if(window.lucide)lucide.createIcons();
 }
+function showDriverSettingDetail(key){
+  const menu=document.getElementById('driverSettingsMenu');
+  const detail=document.getElementById('driverSettingsDetail');
+  if(!menu||!detail)return;
+  const pages={
+    verification:{icon:'badge-check',eyebrow:'VERIFICATION',title:'Document verification',text:'Keep the documents required to receive delivery requests up to date.',body:'<div class="driver-checklist"><label><input type="checkbox" checked> Aadhaar identity verified</label><label><input type="checkbox" checked> Driving licence added</label><label><input type="checkbox"> Vehicle RC pending review</label><label><input type="checkbox"> Profile photo pending review</label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Documents submitted for review">Upload documents <i data-lucide="upload"></i></button>'},
+    vehicle:{icon:'truck',eyebrow:'VEHICLE',title:'Vehicle details',text:'This information is shown only when you accept a customer delivery.',body:'<div class="driver-form-grid"><label>Vehicle type<input value="Loading Rickshaw" aria-label="Vehicle type"></label><label>Vehicle number<input placeholder="GJ 18 AB 1234" aria-label="Vehicle number"></label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Vehicle details saved">Save vehicle details <i data-lucide="check"></i></button>'},
+    availability:{icon:'radio-tower',eyebrow:'AVAILABILITY',title:'Request availability',text:'Choose whether nearby customer requests can reach you.',body:'<div class="driver-setting-toggle"><div><b>Receive new requests</b><small>Keep this on while you are ready to accept jobs.</small></div><button type="button" class="driver-switch is-on" data-driver-switch aria-label="Toggle requests"><i></i></button></div><button type="button" class="driver-detail-save" data-driver-setting-save="Availability preference saved">Save availability <i data-lucide="check"></i></button>'},
+    alerts:{icon:'bell-ring',eyebrow:'ALERTS',title:'Trip alerts',text:'Control the delivery updates sent to this device.',body:'<div class="driver-checklist"><label><input type="checkbox" checked> New booking requests</label><label><input type="checkbox" checked> Pickup and delivery updates</label><label><input type="checkbox" checked> Earnings and payment updates</label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Trip alerts saved">Save alert preferences <i data-lucide="check"></i></button>'},
+    payouts:{icon:'wallet-cards',eyebrow:'EARNINGS',title:'Payout preferences',text:'Set how you would like to review your driver earnings.',body:'<div class="driver-form-grid"><label>Payout frequency<select aria-label="Payout frequency"><option>Weekly</option><option>Daily</option></select></label><label>UPI ID<input placeholder="name@bank" aria-label="UPI ID"></label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Payout preference saved">Save payout preferences <i data-lucide="check"></i></button>'},
+    support:{icon:'circle-help',eyebrow:'SUPPORT',title:'Driver help & support',text:'Get help with trips, documents, payouts, or account access.',body:'<div class="driver-support-actions"><button type="button" data-driver-setting-save="Support request created">Contact driver support <i data-lucide="message-circle"></i></button><button type="button" data-driver-setting-save="Safety support request created">Report a safety issue <i data-lucide="shield-alert"></i></button></div>'}
+  };
+  const page=pages[key]; if(!page)return;
+  menu.querySelectorAll('[data-driver-setting]').forEach(item=>item.classList.toggle('active',item.dataset.driverSetting===key));
+  detail.hidden=false;
+  detail.innerHTML=`<button type="button" class="driver-settings-back" data-driver-settings-back><i data-lucide="arrow-left"></i> Settings</button><div class="driver-setting-detail-head"><span><i data-lucide="${page.icon}"></i></span><div><small>${page.eyebrow}</small><h2>${page.title}</h2><p>${page.text}</p></div></div><div class="driver-setting-detail-body">${page.body}</div>`;
+  if(window.lucide)lucide.createIcons();
+}
 function populateDriverRequest(booking) {
   if (!booking) return;
   activeBookingId = booking.id;
@@ -521,6 +539,17 @@ document.addEventListener('click', async event => {
     if(receipt)receipt.hidden=true;
     return;
   }
+  const driverSetting=event.target.closest('[data-driver-setting]');
+  if(driverSetting){showDriverSettingDetail(driverSetting.dataset.driverSetting);return;}
+  if(event.target.closest('[data-driver-settings-back]')){
+    const detail=document.getElementById('driverSettingsDetail'); if(detail)detail.hidden=true;
+    document.querySelectorAll('[data-driver-setting]').forEach(item=>item.classList.remove('active'));
+    return;
+  }
+  const switchButton=event.target.closest('[data-driver-switch]');
+  if(switchButton){switchButton.classList.toggle('is-on');return;}
+  const saveSetting=event.target.closest('[data-driver-setting-save]');
+  if(saveSetting){showNotice(saveSetting.dataset.driverSettingSave);return;}
   const request = event.target.closest('[data-driver-booking]');
   if(request){
     const booking=driverQueueBookings.find(item=>item.id===Number(request.dataset.driverBooking));
@@ -1223,7 +1252,7 @@ function initializeDriverPortal(driverView, user) {
       </section>
       <section class="driver-section driver-utility" data-driver-section="settings">
         <div class="driver-section-head"><small>DRIVER ACCOUNT</small><h1>Settings</h1><p>Manage availability, vehicle information and verification documents.</p></div>
-        <div class="driver-settings-list"><article><span><i data-lucide="badge-check"></i></span><div><b>Document verification</b><small>Aadhaar, driving licence, RC and profile photo</small></div><em>Pending review</em></article><article><span><i data-lucide="truck"></i></span><div><b>Vehicle details</b><small>Loading vehicle and registration details</small></div><em>Update</em></article><article><span><i data-lucide="bell-ring"></i></span><div><b>Trip alerts</b><small>Booking, pickup and payment notifications</small></div><em>Enabled</em></article></div>
+        <div class="driver-settings-layout"><div class="driver-settings-list" id="driverSettingsMenu"><button type="button" data-driver-setting="verification"><span><i data-lucide="badge-check"></i></span><div><b>Document verification</b><small>Aadhaar, licence, RC and profile photo</small></div><em>Review</em><i data-lucide="chevron-right"></i></button><button type="button" data-driver-setting="vehicle"><span><i data-lucide="truck"></i></span><div><b>Vehicle details</b><small>Vehicle type and registration number</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-setting="availability"><span><i data-lucide="radio-tower"></i></span><div><b>Request availability</b><small>Control when you receive nearby loads</small></div><em>Online</em><i data-lucide="chevron-right"></i></button><button type="button" data-driver-setting="alerts"><span><i data-lucide="bell-ring"></i></span><div><b>Trip alerts</b><small>Booking, pickup and delivery updates</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-setting="payouts"><span><i data-lucide="wallet-cards"></i></span><div><b>Payout preferences</b><small>UPI details and earnings schedule</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-setting="support"><span><i data-lucide="circle-help"></i></span><div><b>Driver help & support</b><small>Trip, safety and account support</small></div><i data-lucide="chevron-right"></i></button></div><article class="driver-setting-detail" id="driverSettingsDetail" hidden></article></div>
       </section>`);
   }
 
