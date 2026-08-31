@@ -396,10 +396,12 @@ let driverIsOnline=false;
 
 function renderDriverQueueList(bookings, selectedId=activeBookingId) {
   const list=document.getElementById('driverRequestList');
+  const preview=document.getElementById('driverRoutePreview');
   if(!list)return;
   if(!driverIsOnline){
     list.innerHTML='<div class="driver-queue-empty"><i data-lucide="wifi-off"></i><span>Go online to receive nearby booking requests</span></div>';
     if(requestCard){requestCard.dataset.bookingId='';requestCard.querySelector('#acceptBtn')?.setAttribute('disabled','disabled');requestCard.querySelector('#rejectBtn')?.setAttribute('disabled','disabled');}
+    if(preview)preview.innerHTML='';
     if(window.lucide)lucide.createIcons();
     return;
   }
@@ -411,6 +413,7 @@ function renderDriverQueueList(bookings, selectedId=activeBookingId) {
       requestCard.querySelector('#acceptBtn')?.setAttribute('disabled','disabled');
       requestCard.querySelector('#rejectBtn')?.setAttribute('disabled','disabled');
     }
+    if(preview)preview.innerHTML='';
     if(window.lucide)lucide.createIcons();
     return;
   }
@@ -492,6 +495,14 @@ function populateDriverRequest(booking) {
   document.getElementById('requestLoad').textContent = `${booking.load_type} · ${booking.weight} kg`;
 }
 
+function openDriverRoutePreview(order){
+  const preview=document.getElementById('driverRoutePreview');
+  if(!preview||!order)return;
+  preview.innerHTML=`<article class="driver-navigation-card driver-route-preview-card"><div class="driver-navigation-head"><div><small>ROUTE PREVIEW · #HLR-${String(order.id).padStart(4,'0')}</small><h2>Review this delivery route</h2><p>${safe(order.pickup)} <i data-lucide="arrow-right"></i> ${safe(order.drop_location)}</p></div><span>selected</span></div><div class="driver-live-map-shell"><div id="driverLiveMap"></div><div class="driver-map-label"><i data-lucide="map"></i><span><small>REQUEST ROUTE</small><b>Pickup to drop</b></span></div></div><p class="driver-route-preview-note"><i data-lucide="mouse-pointer-click"></i>This route is selected. Accept booking to start live navigation.</p></article>`;
+  if(window.lucide)lucide.createIcons();
+  requestAnimationFrame(()=>buildDriverNavigationMap({...order,status:'searching'}));
+}
+
 async function changeBookingStatus(status, bookingId = activeBookingId) {
   const id = Number(bookingId || requestCard?.dataset.bookingId);
   if (!id) {
@@ -567,6 +578,7 @@ document.addEventListener('click', async event => {
     if(booking){
       populateDriverRequest(booking);
       renderDriverQueueList(driverQueueBookings, booking.id);
+      openDriverRoutePreview(booking);
     }
     return;
   }
@@ -624,13 +636,13 @@ async function buildDriverNavigationMap(order){
   try{const response=await fetch(`https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`);const data=await response.json();if(data.routes?.[0])points=data.routes[0].geometry.coordinates.map(([lng,lat])=>[lat,lng]);}catch(_){/* retain direct route */}
   L.polyline(points,{color:'#fff',weight:10,opacity:.94}).addTo(driverNavigationMap);L.polyline(points,{color:'#6856D9',weight:5}).addTo(driverNavigationMap);
   let index=Math.min(points.length-1,Math.floor(({accepted:.08,pickup:.14,in_transit:.55,delivered:1}[order.status]??.08)*points.length));
-  const vehicle=L.marker(points[index],{icon:L.divIcon({className:'',html:'<div class="vehicle-marker"><i data-lucide="truck"></i></div>',iconSize:[42,42],iconAnchor:[21,21]}),zIndexOffset:500}).addTo(driverNavigationMap);
+  const vehicle=L.marker(points[index],{icon:L.divIcon({className:'',html:`<div class="vehicle-marker"><i data-lucide="${order.status==='searching'?'route':'truck'}"></i></div>`,iconSize:[42,42],iconAnchor:[21,21]}),zIndexOffset:500}).addTo(driverNavigationMap);
   driverNavigationMap.fitBounds(L.latLngBounds(points),{padding:[30,30],maxZoom:14});
   if(['accepted','pickup','in_transit'].includes(order.status)&&points.length>2)driverNavigationTimer=setInterval(()=>{index=index>=points.length-2?Math.floor(points.length*.1):index+1;vehicle.setLatLng(points[index]);},750);
   setTimeout(()=>driverNavigationMap?.invalidateSize(),120);
 }
 function openDriverNavigation(order){
-  const holder=document.querySelector('.driver-live-request');
+  const holder=document.getElementById('driverRoutePreview')||document.querySelector('.driver-live-request');
   if(!holder)return;
   const next=order.status==='accepted'?['pickup','Mark arrived at pickup']:order.status==='pickup'?['in_transit','Start delivery']:order.status==='in_transit'?['delivered','Mark delivered']:null;
   holder.innerHTML=`<article class="driver-navigation-card"><div class="driver-navigation-head"><div><small>LIVE NAVIGATION · #HLR-${String(order.id).padStart(4,'0')}</small><h2>${order.status==='delivered'?'Delivery completed':next?'Navigate your delivery':'Delivery update'}</h2><p>${safe(order.pickup)} <i data-lucide="arrow-right"></i> ${safe(order.drop_location)}</p></div><span>${order.status.replace('_',' ')}</span></div><div class="driver-live-map-shell"><div id="driverLiveMap"></div><div class="driver-map-label"><i data-lucide="navigation"></i><span><small>LIVE DRIVER POSITION</small><b>${order.status==='accepted'?'Heading to pickup':order.status==='pickup'?'At pickup':order.status==='in_transit'?'Heading to drop':'Delivered'}</b></span></div></div>${next?`<button class="accept driver-progress-btn" data-driver-progress="${next[0]}">${next[1]} <i data-lucide="arrow-right"></i></button>`:`<div class="driver-delivered-note"><i data-lucide="circle-check"></i> This delivery is complete and saved in Previous deliveries.</div>`}</article>`;
@@ -1242,10 +1254,6 @@ async function loadDriverQueue(){
       if(ordersOpen && !document.getElementById('driverLiveMap')) openDriverNavigation(active);
       return;
     }
-    if(available){
-      const card=document.getElementById('requestCard');
-      if(card&&card.dataset.bookingId!==String(available.id))populateDriverRequest(available);
-    }
   }catch(_){/* Driver queue will retry automatically. */}
 }
 
@@ -1267,7 +1275,7 @@ function initializeDriverPortal(driverView, user) {
       <section class="driver-section driver-utility" data-driver-section="orders">
         <div class="driver-section-head"><small>LIVE WORK</small><h1>Orders</h1><p>Review new loading requests and your active delivery trips.</p></div>
         <div class="driver-request-list-wrap"><div class="driver-request-list-head"><small>AVAILABLE REQUESTS</small><b>Choose a request to review</b></div><div class="driver-request-list" id="driverRequestList"></div></div>
-        <div class="driver-live-request"></div>
+        <div class="driver-live-request"><div class="driver-route-preview" id="driverRoutePreview"></div></div>
         <div class="driver-order-grid driver-work-grid">
           <article class="driver-work-card is-offline"><div class="driver-work-top"><span><i data-lucide="radio-tower"></i></span><b id="driverAvailableCount">0</b></div><small>AVAILABILITY</small><h2 id="driverAvailabilityText">Offline · requests paused</h2><p>Go online when you are ready to receive nearby verified customer loads.</p><button type="button" data-driver-set-online="online"><i data-lucide="wifi"></i> Go online</button></article>
           <article class="driver-work-card"><div class="driver-work-top"><span><i data-lucide="route"></i></span><b class="active-trip-dot"></b></div><small>ACTIVE TRIP</small><h2 id="driverActiveTripTitle">No active delivery</h2><p id="driverActiveTripText">Accept a request to begin live navigation.</p><button type="button" class="secondary" id="driverActiveTripAction" data-active-booking=""><i data-lucide="history"></i> View previous deliveries</button></article>
