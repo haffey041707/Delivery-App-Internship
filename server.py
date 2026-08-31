@@ -20,6 +20,7 @@ from urllib.request import Request as URLRequest, urlopen
 
 from flask import Flask, jsonify, request, send_from_directory, session, redirect
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 ROOT = Path(__file__).resolve().parent
 # Vercel mounts the deployed project as read-only.  Its /tmp directory is the
@@ -319,6 +320,44 @@ def logout():
             db.execute("DELETE FROM account_sessions WHERE token = ?", (token,))
     session.clear()
     return jsonify({"status": "signed_out"})
+
+
+@app.post("/api/driver/documents")
+def upload_driver_documents():
+    """Receive the four verification documents from a signed-in driver."""
+    if not session.get("user_id") or signed_in_role() != "driver":
+        return jsonify({"error": "Sign in as a driver to submit documents"}), 401
+    allowed_types = {"image/jpeg", "image/png", "application/pdf"}
+    required = ("aadhaar", "licence", "rc", "photo")
+    uploads = []
+    for field in required:
+        file = request.files.get(field)
+        if not file or not file.filename:
+            return jsonify({"error": "Please choose all required verification documents"}), 400
+        if file.mimetype not in allowed_types or (field == "photo" and file.mimetype == "application/pdf"):
+            return jsonify({"error": "Use a JPG, PNG or PDF file for each document"}), 400
+        payload = file.read()
+        if not payload or len(payload) > 8 * 1024 * 1024:
+            return jsonify({"error": "Each document must be between 1 byte and 8 MB"}), 400
+        uploads.append((field, secure_filename(file.filename), file.mimetype, payload))
+    submitted_at = datetime.now(timezone.utc).isoformat()
+    user_id = str(session["user_id"])
+    stored = []
+    if os.environ.get("VERCEL") and persistent_accounts_enabled():
+        from vercel.blob import BlobClient
+        client = BlobClient()
+        for field, filename, content_type, payload in uploads:
+            path = f"haulr-driver-documents/{user_id}/{submitted_at[:10]}/{field}-{filename}"
+            client.put(path, payload, access="private", content_type=content_type, overwrite=True)
+            stored.append({"type": field, "name": filename})
+    else:
+        folder = ROOT / "uploads" / "driver-documents" / user_id
+        folder.mkdir(parents=True, exist_ok=True)
+        for field, filename, _content_type, payload in uploads:
+            destination = folder / f"{field}-{filename}"
+            destination.write_bytes(payload)
+            stored.append({"type": field, "name": filename})
+    return jsonify({"status": "submitted", "submitted_at": submitted_at, "documents": stored})
 
 
 @app.get("/api/auth/me")

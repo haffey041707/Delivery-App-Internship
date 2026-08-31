@@ -459,7 +459,7 @@ function showDriverSettingDetail(key){
   const detail=document.getElementById('driverSettingsDetail');
   if(!menu||!detail)return;
   const pages={
-    verification:{icon:'badge-check',eyebrow:'VERIFICATION',title:'Document verification',text:'Keep the documents required to receive delivery requests up to date.',body:'<div class="driver-checklist"><label><input type="checkbox" checked> Aadhaar identity verified</label><label><input type="checkbox" checked> Driving licence added</label><label><input type="checkbox"> Vehicle RC pending review</label><label><input type="checkbox"> Profile photo pending review</label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Documents submitted for review">Upload documents <i data-lucide="upload"></i></button>'},
+    verification:{icon:'badge-check',eyebrow:'VERIFICATION',title:'Document verification',text:'Upload clear files for verification. Files are encrypted in transit and reviewed before you receive live loads.',body:'<form id="driverDocumentsForm" class="driver-documents-form"><div class="driver-upload-grid"><label><span>Aadhaar card</span><input required name="aadhaar" type="file" accept="image/jpeg,image/png,application/pdf"><small>JPG, PNG or PDF · required</small></label><label><span>Driving licence</span><input required name="licence" type="file" accept="image/jpeg,image/png,application/pdf"><small>JPG, PNG or PDF · required</small></label><label><span>Vehicle RC</span><input required name="rc" type="file" accept="image/jpeg,image/png,application/pdf"><small>JPG, PNG or PDF · required</small></label><label><span>Profile photo</span><input required name="photo" type="file" accept="image/jpeg,image/png"><small>JPG or PNG · required</small></label></div><p class="driver-form-message" id="driverDocumentsMessage">Choose all four documents to submit for review.</p><button type="submit" class="driver-detail-save">Submit for verification <i data-lucide="shield-check"></i></button></form>'},
     vehicle:{icon:'truck',eyebrow:'VEHICLE',title:'Vehicle details',text:'This information is shown only when you accept a customer delivery.',body:'<div class="driver-form-grid"><label>Vehicle type<input value="Loading Rickshaw" aria-label="Vehicle type"></label><label>Vehicle number<input placeholder="GJ 18 AB 1234" aria-label="Vehicle number"></label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Vehicle details saved">Save vehicle details <i data-lucide="check"></i></button>'},
     availability:{icon:'radio-tower',eyebrow:'AVAILABILITY',title:'Request availability',text:'Choose whether nearby customer requests can reach you.',body:'<div class="driver-setting-toggle"><div><b>Receive new requests</b><small>Keep this on while you are ready to accept jobs.</small></div><button type="button" class="driver-switch is-on" data-driver-switch aria-label="Toggle requests"><i></i></button></div><button type="button" class="driver-detail-save" data-driver-setting-save="Availability preference saved">Save availability <i data-lucide="check"></i></button>'},
     alerts:{icon:'bell-ring',eyebrow:'ALERTS',title:'Trip alerts',text:'Control the delivery updates sent to this device.',body:'<div class="driver-checklist"><label><input type="checkbox" checked> New booking requests</label><label><input type="checkbox" checked> Pickup and delivery updates</label><label><input type="checkbox" checked> Earnings and payment updates</label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Trip alerts saved">Save alert preferences <i data-lucide="check"></i></button>'},
@@ -576,6 +576,23 @@ document.addEventListener('click', async event => {
     const timer = document.querySelector('.timer');
     if (timer) timer.textContent = 'Declined';
   }
+});
+document.addEventListener('submit',async event=>{
+  if(event.target.id!=='driverDocumentsForm')return;
+  event.preventDefault();
+  const form=event.target, message=document.getElementById('driverDocumentsMessage');
+  const submit=form.querySelector('button[type="submit"]');
+  if(!form.checkValidity()){form.reportValidity();return;}
+  submit.disabled=true;submit.textContent='Uploading documents…';
+  try{
+    const response=await fetch('/api/driver/documents',{method:'POST',body:new FormData(form)});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Upload could not be completed');
+    message.textContent='Documents submitted successfully. Verification is now pending review.';
+    message.classList.add('success');
+    showSuccess('Documents submitted','Your verification documents are ready for review.');
+  }catch(error){message.textContent=error.message||'Upload could not be completed. Please try again.';message.classList.remove('success');}
+  finally{submit.disabled=false;submit.innerHTML='Submit for verification <i data-lucide="shield-check"></i>';if(window.lucide)lucide.createIcons();}
 });
 
 let driverNavigationMap=null;
