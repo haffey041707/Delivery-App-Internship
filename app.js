@@ -477,7 +477,7 @@ function showDriverSettingDetail(key){
     support:{icon:'circle-help',eyebrow:'SUPPORT',title:'Driver help & support',text:'Choose a topic and get the right help for your trips, documents, payouts, or safety.',body:'<div class="driver-support-hub"><button type="button" data-driver-support-page="trip"><span><i data-lucide="route"></i></span><div><b>Trip & delivery help</b><small>Pickup, route, customer, or delivery issue</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-support-page="safety"><span><i data-lucide="shield-alert"></i></span><div><b>Safety support</b><small>Urgent assistance and incident reporting</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-support-page="earnings"><span><i data-lucide="wallet-cards"></i></span><div><b>Payments & earnings</b><small>Payout, fare, cash, or UPI question</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-support-page="documents"><span><i data-lucide="badge-check"></i></span><div><b>Documents & verification</b><small>Aadhaar, licence, RC, or approval status</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-support-page="account"><span><i data-lucide="user-round-cog"></i></span><div><b>Account support</b><small>Profile, access, notification, or app issue</small></div><i data-lucide="chevron-right"></i></button></div>'}
   };
   const page=pages[key]; if(!page)return;
-  menu.querySelectorAll('[data-driver-setting]').forEach(item=>item.classList.toggle('active',item.dataset.driverSetting===key));
+  document.querySelectorAll('[data-driver-setting]').forEach(item=>item.classList.toggle('active',item.dataset.driverSetting===key));
   detail.hidden=false;
   detail.innerHTML=`<button type="button" class="driver-settings-back" data-driver-settings-back><i data-lucide="arrow-left"></i> Settings</button><div class="driver-setting-detail-head"><span><i data-lucide="${page.icon}"></i></span><div><small>${page.eyebrow}</small><h2>${page.title}</h2><p>${page.text}</p></div></div><div class="driver-setting-detail-body">${page.body}</div>`;
   detail.scrollTop=0;
@@ -581,7 +581,13 @@ document.addEventListener('click', async event => {
     return;
   }
   const driverSetting=event.target.closest('[data-driver-setting]');
-  if(driverSetting){showDriverSettingDetail(driverSetting.dataset.driverSetting);return;}
+  if(driverSetting){
+    // Desktop settings shortcuts live in the fixed driver sidebar. Open the
+    // Settings workspace first, then reveal the chosen page.
+    if(driverSetting.closest('.side-nav')) document.querySelector('[data-driver-view="settings"]')?.click();
+    showDriverSettingDetail(driverSetting.dataset.driverSetting);
+    return;
+  }
   const driverSupportPage=event.target.closest('[data-driver-support-page]');
   if(driverSupportPage){showDriverSupportPage(driverSupportPage.dataset.driverSupportPage);return;}
   if(event.target.closest('[data-driver-support-back]')){showDriverSettingDetail('support');return;}
@@ -1352,7 +1358,7 @@ function initializeDriverPortal(driverView, user) {
     home.dataset.driverHomePrepared = 'true';
   }
 
-  sidebar.innerHTML = `<div><p>HAULR DRIVER</p><button class="active" data-driver-view="home"><i data-lucide="house"></i><span>Home</span></button><button data-driver-view="orders"><i data-lucide="clipboard-list"></i><span>Orders</span></button><button data-driver-view="deliveries"><i data-lucide="history"></i><span>Previous deliveries</span></button><button data-driver-view="settings"><i data-lucide="settings-2"></i><span>Settings</span></button></div><button class="sign-out" id="driverSignOut"><i data-lucide="log-out"></i><span>Sign out</span></button>`;
+  sidebar.innerHTML = `<div><p>HAULR DRIVER</p><button class="active" data-driver-view="home"><i data-lucide="house"></i><span>Home</span></button><button data-driver-view="orders"><i data-lucide="clipboard-list"></i><span>Orders</span></button><button data-driver-view="deliveries"><i data-lucide="history"></i><span>Previous deliveries</span></button><button data-driver-view="settings"><i data-lucide="settings-2"></i><span>Settings</span></button><div class="driver-side-settings" aria-label="Driver settings"><p>SETTINGS</p><button type="button" data-driver-setting="verification"><i data-lucide="badge-check"></i><span>Verification</span></button><button type="button" data-driver-setting="vehicle"><i data-lucide="truck"></i><span>Vehicle details</span></button><button type="button" data-driver-setting="availability"><i data-lucide="radio-tower"></i><span>Availability</span></button><button type="button" data-driver-setting="alerts"><i data-lucide="bell-ring"></i><span>Trip alerts</span></button><button type="button" data-driver-setting="payouts"><i data-lucide="wallet-cards"></i><span>Payouts</span></button><button type="button" data-driver-setting="support"><i data-lucide="circle-help"></i><span>Help & support</span></button></div></div><button class="sign-out" id="driverSignOut"><i data-lucide="log-out"></i><span>Sign out</span></button>`;
   if (!driverView.querySelector('.driver-mobile-nav')) {
     driverView.insertAdjacentHTML('beforeend', `<nav class="driver-mobile-nav" aria-label="Driver navigation"><button class="active" data-driver-view="home"><i data-lucide="house"></i><span>Home</span></button><button data-driver-view="orders"><i data-lucide="clipboard-list"></i><span>Orders</span></button><button data-driver-view="deliveries"><i data-lucide="history"></i><span>Deliveries</span></button><button data-driver-view="settings"><i data-lucide="settings-2"></i><span>Settings</span></button></nav>`);
   }
