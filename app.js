@@ -474,12 +474,27 @@ function showDriverSettingDetail(key){
     availability:{icon:'radio-tower',eyebrow:'AVAILABILITY',title:'Request availability',text:'Choose whether nearby customer requests can reach you.',body:'<div class="driver-setting-toggle"><div><b>Receive new requests</b><small>Keep this on while you are ready to accept jobs.</small></div><button type="button" class="driver-switch is-on" data-driver-switch aria-label="Toggle requests"><i></i></button></div><button type="button" class="driver-detail-save" data-driver-setting-save="Availability preference saved">Save availability <i data-lucide="check"></i></button>'},
     alerts:{icon:'bell-ring',eyebrow:'ALERTS',title:'Trip alerts',text:'Control the delivery updates sent to this device.',body:'<div class="driver-checklist"><label><input type="checkbox" checked> New booking requests</label><label><input type="checkbox" checked> Pickup and delivery updates</label><label><input type="checkbox" checked> Earnings and payment updates</label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Trip alerts saved">Save alert preferences <i data-lucide="check"></i></button>'},
     payouts:{icon:'wallet-cards',eyebrow:'EARNINGS',title:'Payout preferences',text:'Set how you would like to review your driver earnings.',body:'<div class="driver-form-grid"><label>Payout frequency<select aria-label="Payout frequency"><option>Weekly</option><option>Daily</option></select></label><label>UPI ID<input placeholder="name@bank" aria-label="UPI ID"></label></div><button type="button" class="driver-detail-save" data-driver-setting-save="Payout preference saved">Save payout preferences <i data-lucide="check"></i></button>'},
-    support:{icon:'circle-help',eyebrow:'SUPPORT',title:'Driver help & support',text:'Get help with trips, documents, payouts, or account access.',body:'<div class="driver-support-actions"><button type="button" data-driver-setting-save="Support request created">Contact driver support <i data-lucide="message-circle"></i></button><button type="button" data-driver-setting-save="Safety support request created">Report a safety issue <i data-lucide="shield-alert"></i></button></div>'}
+    support:{icon:'circle-help',eyebrow:'SUPPORT',title:'Driver help & support',text:'Choose a topic and get the right help for your trips, documents, payouts, or safety.',body:'<div class="driver-support-hub"><button type="button" data-driver-support-page="trip"><span><i data-lucide="route"></i></span><div><b>Trip & delivery help</b><small>Pickup, route, customer, or delivery issue</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-support-page="safety"><span><i data-lucide="shield-alert"></i></span><div><b>Safety support</b><small>Urgent assistance and incident reporting</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-support-page="earnings"><span><i data-lucide="wallet-cards"></i></span><div><b>Payments & earnings</b><small>Payout, fare, cash, or UPI question</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-support-page="documents"><span><i data-lucide="badge-check"></i></span><div><b>Documents & verification</b><small>Aadhaar, licence, RC, or approval status</small></div><i data-lucide="chevron-right"></i></button><button type="button" data-driver-support-page="account"><span><i data-lucide="user-round-cog"></i></span><div><b>Account support</b><small>Profile, access, notification, or app issue</small></div><i data-lucide="chevron-right"></i></button></div>'}
   };
   const page=pages[key]; if(!page)return;
   menu.querySelectorAll('[data-driver-setting]').forEach(item=>item.classList.toggle('active',item.dataset.driverSetting===key));
   detail.hidden=false;
   detail.innerHTML=`<button type="button" class="driver-settings-back" data-driver-settings-back><i data-lucide="arrow-left"></i> Settings</button><div class="driver-setting-detail-head"><span><i data-lucide="${page.icon}"></i></span><div><small>${page.eyebrow}</small><h2>${page.title}</h2><p>${page.text}</p></div></div><div class="driver-setting-detail-body">${page.body}</div>`;
+  detail.scrollTop=0;
+  if(window.lucide)lucide.createIcons();
+}
+function showDriverSupportPage(key){
+  const detail=document.getElementById('driverSettingsDetail');
+  if(!detail)return;
+  const topics={
+    trip:{icon:'route',eyebrow:'TRIP SUPPORT',title:'Trip & delivery help',text:'Tell us what happened on a pickup, route, or delivery.',fields:'<label>Delivery reference<input placeholder="Example: HLR-0005" aria-label="Delivery reference"></label><label>What do you need help with?<select aria-label="Trip issue"><option>Pickup location issue</option><option>Customer not reachable</option><option>Route or navigation issue</option><option>Load or vehicle concern</option><option>Delivery completion issue</option></select></label>'},
+    safety:{icon:'shield-alert',eyebrow:'SAFETY SUPPORT',title:'Safety first',text:'For an immediate emergency, contact local emergency services first. You can also send Haulr a safety report.',fields:'<label>Delivery reference<input placeholder="Example: HLR-0005" aria-label="Delivery reference"></label><label>Safety concern<select aria-label="Safety concern"><option>Unsafe pickup or drop location</option><option>Roadside incident</option><option>Customer conduct concern</option><option>Vehicle or load safety concern</option></select></label>',urgent:true},
+    earnings:{icon:'wallet-cards',eyebrow:'EARNINGS SUPPORT',title:'Payments & earnings',text:'Get help with a delivery charge, cash collection, UPI payment, or payout.',fields:'<label>Delivery or payout reference<input placeholder="Example: HLR-0005" aria-label="Delivery or payout reference"></label><label>Payment topic<select aria-label="Payment topic"><option>Delivery fare question</option><option>Cash collection</option><option>UPI payment</option><option>Payout status</option></select></label>'},
+    documents:{icon:'badge-check',eyebrow:'VERIFICATION SUPPORT',title:'Documents & verification',text:'Ask about your Aadhaar, licence, RC, photo, or verification review.',fields:'<label>Document type<select aria-label="Document type"><option>Aadhaar card</option><option>Driving licence</option><option>Vehicle RC</option><option>Profile photo</option></select></label><label>Verification topic<select aria-label="Verification topic"><option>Document upload issue</option><option>Document rejected</option><option>Verification pending</option></select></label>'},
+    account:{icon:'user-round-cog',eyebrow:'ACCOUNT SUPPORT',title:'Account support',text:'Get help with your driver profile, login, notifications, or app access.',fields:'<label>Account topic<select aria-label="Account topic"><option>Profile details</option><option>Sign-in or account access</option><option>Notifications</option><option>App technical issue</option></select></label><label>Best contact number<input type="tel" placeholder="Your mobile number" aria-label="Best contact number"></label>'}
+  };
+  const topic=topics[key]; if(!topic)return;
+  detail.innerHTML=`<button type="button" class="driver-settings-back" data-driver-support-back><i data-lucide="arrow-left"></i> Help & support</button><div class="driver-setting-detail-head"><span><i data-lucide="${topic.icon}"></i></span><div><small>${topic.eyebrow}</small><h2>${topic.title}</h2><p>${topic.text}</p></div></div><form class="driver-support-form" data-driver-support-form data-topic="${key}">${topic.urgent?'<a class="driver-emergency-action" href="tel:112"><i data-lucide="phone-call"></i> Call emergency services · 112</a>':''}<div class="driver-form-grid">${topic.fields}</div><label class="driver-support-message">Describe what happened<textarea required placeholder="Add the details that will help our driver support team assist you."></textarea></label><p class="driver-form-message">Your request is sent securely to Driver Support. We will contact you using your account details.</p><button type="submit" class="driver-detail-save">Send support request <i data-lucide="send"></i></button></form>`;
   detail.scrollTop=0;
   if(window.lucide)lucide.createIcons();
 }
@@ -563,6 +578,9 @@ document.addEventListener('click', async event => {
   }
   const driverSetting=event.target.closest('[data-driver-setting]');
   if(driverSetting){showDriverSettingDetail(driverSetting.dataset.driverSetting);return;}
+  const driverSupportPage=event.target.closest('[data-driver-support-page]');
+  if(driverSupportPage){showDriverSupportPage(driverSupportPage.dataset.driverSupportPage);return;}
+  if(event.target.closest('[data-driver-support-back]')){showDriverSettingDetail('support');return;}
   if(event.target.closest('[data-driver-settings-back]')){
     const detail=document.getElementById('driverSettingsDetail'); if(detail)detail.hidden=true;
     document.querySelectorAll('[data-driver-setting]').forEach(item=>item.classList.remove('active'));
@@ -601,6 +619,18 @@ document.addEventListener('click', async event => {
   }
 });
 document.addEventListener('submit',async event=>{
+  if(event.target.matches('[data-driver-support-form]')){
+    event.preventDefault();
+    const form=event.target;
+    if(!form.checkValidity()){form.reportValidity();return;}
+    const button=form.querySelector('button[type="submit"]');
+    button.disabled=true;button.innerHTML='Sending request…';
+    setTimeout(()=>{
+      showSuccess('Support request sent','Driver Support has received your request and will contact you shortly.');
+      showDriverSettingDetail('support');
+    },450);
+    return;
+  }
   if(event.target.id!=='driverDocumentsForm')return;
   event.preventDefault();
   const form=event.target, message=document.getElementById('driverDocumentsMessage');
