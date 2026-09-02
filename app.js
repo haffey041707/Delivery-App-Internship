@@ -545,13 +545,17 @@ async function changeBookingStatus(status, bookingId = activeBookingId) {
 document.addEventListener('click', async event => {
   const availabilityToggle=event.target.closest('[data-driver-set-online]');
   if(availabilityToggle){
-    const online=availabilityToggle.dataset.driverSetOnline==='online';
+    const online=!driverIsOnline;
     driverIsOnline=online;
     availabilityToggle.dataset.driverSetOnline=online?'offline':'online';
     availabilityToggle.innerHTML=online?'<i data-lucide="wifi-off"></i> Go offline':'<i data-lucide="wifi"></i> Go online';
     const text=document.getElementById('driverAvailabilityText');
-    if(text)text.textContent=online?'Online · ready for requests':'Offline · requests paused';
-    availabilityToggle.closest('.driver-work-card')?.classList.toggle('is-offline',!online);
+    const availabilityCard=availabilityToggle.closest('.driver-work-card');
+    const copy=availabilityCard?.querySelector('p');
+    if(text)text.textContent=online?'Online · checking nearby requests':'Offline · requests paused';
+    if(copy)copy.textContent=online?'Nearby verified customer loads will appear above as they arrive.':'Go online when you are ready to receive nearby verified customer loads.';
+    availabilityCard?.classList.toggle('is-offline',!online);
+    document.querySelector('.driver-online-chip')?.replaceChildren(Object.assign(document.createElement('span'),{}),document.createTextNode(online?' Online for requests':' Requests paused'));
     renderDriverQueueList(driverQueueBookings,activeBookingId);
     renderDriverOrderInsights(driverQueueBookings);
     if(window.lucide)lucide.createIcons();
