@@ -1243,6 +1243,7 @@ function renderAccount(user) {
     document.getElementById('settingsPhone').value = user.phone;
     document.getElementById('dashboardGreeting').innerHTML = `Good to see you, ${safe(user.name.split(' ')[0])}.<br><em>What are we moving?</em>`;
     if (user.role === 'driver') renderDriverWorkspace(user);
+    else showView('home');
     loadWallet();
     loadNotifications();
   } else {
@@ -1388,8 +1389,19 @@ function addRolePicker(form, fieldId) {
     if (window.lucide) lucide.createIcons();
   }));
 }
+function addLoginRolePicker(form, fieldId) {
+  if (!form || form.querySelector('.login-role-picker')) return;
+  form.insertAdjacentHTML('afterbegin', `<fieldset class="role-picker login-role-picker"><legend>Sign in to Haulr as</legend><input type="hidden" id="${fieldId}" value="customer"><div><button type="button" class="active" data-login-role="customer"><i data-lucide="package-check"></i><span><b>Customer</b><small>Book and track deliveries</small></span></button><button type="button" data-login-role="driver"><i data-lucide="truck"></i><span><b>Driver</b><small>Manage delivery work</small></span></button></div></fieldset>`);
+  form.querySelectorAll('[data-login-role]').forEach(button => button.addEventListener('click', () => {
+    form.querySelectorAll('[data-login-role]').forEach(item => item.classList.toggle('active', item === button));
+    form.querySelector(`#${fieldId}`).value = button.dataset.loginRole;
+    if (window.lucide) lucide.createIcons();
+  }));
+}
 addRolePicker(document.getElementById('entryRegisterForm'), 'entryRegisterRole');
 addRolePicker(document.getElementById('registerForm'), 'registerRole');
+addLoginRolePicker(document.getElementById('entryLoginForm'), 'entryLoginRole');
+addLoginRolePicker(document.getElementById('loginForm'), 'loginRole');
 function openAuth() { authOverlay.classList.add('open'); authOverlay.setAttribute('aria-hidden','false'); accountMenu.classList.remove('open'); document.body.style.overflow='hidden'; setTimeout(initGoogleIdentity, 60); }
 function closeAuth() { authOverlay.classList.remove('open'); authOverlay.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
 document.getElementById('accountBtn').addEventListener('click', event => { event.stopPropagation(); accountMenu.classList.toggle('open'); });
@@ -1423,7 +1435,7 @@ async function entryAuthRequest(path,payload,errorId){
     renderAccount(data);loadLatestBooking();
   }catch(_){error.className='auth-error';error.textContent='Unable to reach Haulr right now.';}
 }
-document.getElementById('entryLoginForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/login',{email:document.getElementById('entryLoginEmail').value,password:document.getElementById('entryLoginPassword').value},'entryLoginError');});
+document.getElementById('entryLoginForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/login',{email:document.getElementById('entryLoginEmail').value,password:document.getElementById('entryLoginPassword').value,role:document.getElementById('entryLoginRole').value},'entryLoginError');});
 document.getElementById('entryRegisterForm')?.addEventListener('submit',event=>{event.preventDefault();entryAuthRequest('/api/auth/register',{name:document.getElementById('entryRegisterName').value,email:document.getElementById('entryRegisterEmail').value,phone:document.getElementById('entryRegisterPhone').value,password:document.getElementById('entryRegisterPassword').value,role:document.getElementById('entryRegisterRole').value},'entryRegisterError');});
 async function launchGoogleSignIn(event) {
   event?.preventDefault();
@@ -1433,7 +1445,9 @@ async function launchGoogleSignIn(event) {
     const response = await fetch('/api/auth/google/status');
     const data = await response.json();
     if (!data.configured) throw new Error('Google sign-in is not configured yet.');
-    const popup = window.open('/api/auth/google/start?popup=1', 'haulrGoogleSignIn', 'popup=yes,width=520,height=680,resizable=yes,scrollbars=yes');
+    const source = event?.currentTarget;
+    const role = source?.closest('.entry-form-page')?.querySelector('#entryLoginRole')?.value || document.getElementById('loginRole')?.value || 'customer';
+    const popup = window.open(`/api/auth/google/start?popup=1&role=${encodeURIComponent(role)}`, 'haulrGoogleSignIn', 'popup=yes,width=520,height=680,resizable=yes,scrollbars=yes');
     // A browser may block popups; keep a same-window path as a safe fallback.
     if (!popup) { window.location.assign('/api/auth/google/start'); return; }
   } catch (issue) {
@@ -1477,7 +1491,7 @@ async function authRequest(path, payload, errorId) {
   renderAccount(data); closeAuth(); loadLatestBooking();
 }
 document.getElementById('loginForm').addEventListener('submit', event => {
-  event.preventDefault(); authRequest('/api/auth/login',{email:document.getElementById('loginEmail').value,password:document.getElementById('loginPassword').value},'loginError');
+  event.preventDefault(); authRequest('/api/auth/login',{email:document.getElementById('loginEmail').value,password:document.getElementById('loginPassword').value,role:document.getElementById('loginRole').value},'loginError');
 });
 document.getElementById('registerForm').addEventListener('submit', event => {
   event.preventDefault(); authRequest('/api/auth/register',{name:document.getElementById('registerName').value,email:document.getElementById('registerEmail').value,phone:document.getElementById('registerPhone').value,password:document.getElementById('registerPassword').value,role:document.getElementById('registerRole').value},'registerError');
@@ -1486,10 +1500,17 @@ document.getElementById('logoutBtn').addEventListener('click', async () => { awa
 async function restoreSession() {
   const authParams=new URLSearchParams(window.location.search);
   const googleSuccess=authParams.get('auth')==='google_success';
+  const googleRoleMismatch=authParams.get('auth_error')==='role_mismatch';
   try {
     const response=await fetch('/api/auth/me');
     const data=await response.json();
     renderAccount(data.user);
+    if (!data.user && googleRoleMismatch) {
+      showEntryPage('login');
+      const expected=authParams.get('expected_role')==='driver'?'Driver':'Customer';
+      const error=document.getElementById('entryLoginError');
+      if(error) error.textContent=`This Google account is registered as a ${expected}. Choose ${expected} to continue.`;
+    }
     if (data.user && googleSuccess) {
       document.getElementById('loginError').textContent='';
       closeAuth();

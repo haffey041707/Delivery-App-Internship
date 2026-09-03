@@ -302,10 +302,16 @@ def register():
 def login():
     data = request.get_json(silent=True) or {}
     email = str(data.get("email", "")).strip().lower()
+    requested_role = str(data.get("role", "customer")).strip().lower()
+    if requested_role not in {"customer", "driver"}:
+        return jsonify({"error": "Choose Customer or Driver to sign in"}), 400
     user = find_user(email)
     if not user or not check_password_hash(user["password_hash"], str(data.get("password", ""))):
         return jsonify({"error": "Incorrect email or password"}), 401
     profile = profile_for(user)
+    if profile["role"] != requested_role:
+        account_role = "Driver" if profile["role"] == "driver" else "Customer"
+        return jsonify({"error": f"This account is registered as a {account_role}. Choose {account_role} to continue."}), 403
     session["user_id"] = profile["id"]
     session["user_profile"] = profile
     register_session(user["id"])
@@ -452,6 +458,8 @@ def google_start():
     state = secrets.token_urlsafe(24)
     session["google_oauth_state"] = state
     session["google_oauth_popup"] = request.args.get("popup") == "1"
+    requested_role = request.args.get("role", "customer").strip().lower()
+    session["google_requested_role"] = requested_role if requested_role in {"customer", "driver"} else "customer"
     callback = request.host_url.rstrip("/") + "/api/auth/google/callback"
     query = urlencode({
         "client_id": client_id, "redirect_uri": callback, "response_type": "code",
@@ -534,6 +542,9 @@ def google_callback():
                                     (name, email, "", generate_password_hash(secrets.token_urlsafe(32)), datetime.now(timezone.utc).isoformat()))
                 user = db.execute("SELECT * FROM users WHERE id = ?", (cursor.lastrowid,)).fetchone()
         identity = profile_for(user)
+        requested_role = session.pop("google_requested_role", "customer")
+        if identity["role"] != requested_role:
+            return redirect("/?auth_error=role_mismatch&expected_role=" + identity["role"] + ("&popup=1" if session.pop("google_oauth_popup", False) else ""))
         session["user_id"] = identity["id"]
         session["user_profile"] = identity
         register_session(identity["id"])
