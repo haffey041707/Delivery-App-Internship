@@ -1217,7 +1217,8 @@ body.driver-mode .side-nav{background:linear-gradient(165deg,#28205A,#40318E)!im
    chart and label to remain completely inside its own tile. */
 @media(max-width:900px){
   .driver-home-insights{gap:12px!important}
-  .driver-home-insights>article{aspect-ratio:1/1!important;min-height:0!important;overflow:hidden}
+  .driver-home-insights{grid-auto-rows:210px!important}
+  .driver-home-insights>article{height:210px!important;aspect-ratio:auto!important;min-height:0!important;overflow:hidden}
   .driver-spend-card,.driver-jarvis-card,.driver-summary-card{padding:12px!important}
   .driver-card-heading{gap:6px!important}
   .driver-card-heading small{font-size:7px!important;letter-spacing:1px!important}
