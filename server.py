@@ -374,6 +374,12 @@ def current_user():
         register_session(session["user_id"])
     saved_profile = session.get("user_profile") or {}
     user = find_user(saved_profile.get("email", "")) if saved_profile.get("email") else None
+    # If a durable account has been removed, invalidate any browser session
+    # that still carries its old signed cookie. This lets the email register
+    # cleanly again instead of reopening a deleted account.
+    if not user and persistent_accounts_enabled():
+        session.clear()
+        return jsonify({"user": None})
     # Vercel functions can run on different ephemeral instances.  Keep the
     # verified identity in Flask's signed session so a successful Google login
     # remains signed in even if that instance's temporary SQLite file is fresh.
