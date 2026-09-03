@@ -1213,5 +1213,31 @@ body.driver-mode .side-nav{background:linear-gradient(165deg,#28205A,#40318E)!im
   body.driver-mode .driver-utility{padding-bottom:84px!important}
 }
 
+/* Phone driver dashboard: preserve the two square tiles, but scale every
+   chart and label to remain completely inside its own tile. */
+@media(max-width:900px){
+  .driver-home-insights{gap:12px!important}
+  .driver-home-insights>article{aspect-ratio:1/1!important;min-height:0!important;overflow:hidden}
+  .driver-spend-card,.driver-jarvis-card,.driver-summary-card{padding:12px!important}
+  .driver-card-heading{gap:6px!important}
+  .driver-card-heading small{font-size:7px!important;letter-spacing:1px!important}
+  .driver-card-heading h2{margin-top:4px!important;font-size:13px!important;line-height:1.12!important}
+  .driver-card-heading>b{padding:4px 6px!important;font-size:7px!important;line-height:1.15!important}
+  .driver-donut{width:72px!important;height:72px!important;margin:7px auto!important}
+  .driver-donut>div{width:50px!important;height:50px!important}
+  .driver-donut strong{font-size:15px!important}.driver-donut small{font-size:5px!important}
+  .driver-legend{gap:4px!important;margin-top:auto!important;font-size:5px!important;line-height:1!important}
+  .driver-legend span{gap:2px!important}.driver-legend i{width:5px!important;height:5px!important}.driver-legend b{font-size:5px!important}
+  .driver-status-orbit{width:106px!important;height:106px!important;margin:auto!important}
+  .driver-status-orbit:before{inset:11px!important}.driver-status-orbit:after{inset:25px!important}
+  .driver-status-copy small{font-size:6px!important}.driver-status-copy strong{font-size:17px!important}.driver-status-copy span{font-size:7px!important}
+  .driver-status-foot{gap:3px!important;margin-top:0!important}.driver-status-foot span{padding:5px 6px!important;font-size:5px!important}
+  .driver-summary-card>span{width:27px!important;height:27px!important}.driver-summary-card>span svg{width:14px!important}
+  .driver-summary-card strong{margin-top:10px!important;font-size:25px!important}.driver-summary-card p{margin-top:6px!important;padding-top:7px!important;font-size:6px!important;line-height:1.2!important}
+  .driver-days-card .driver-days-chart{width:78px!important;height:78px!important;margin:auto!important}
+  .driver-days-chart circle{stroke-width:9px!important}.driver-days-chart strong{font-size:18px!important}.driver-days-chart small{font-size:6px!important}
+  .driver-home-next{grid-column:1/-1!important}
+}
+
 /* Live driver controls below the request card. */
 .driver-work-grid{margin-top:20px}.driver-work-card{position:relative;display:flex;flex-direction:column;min-height:205px!important;padding:20px!important;overflow:hidden}.driver-work-card:after{content:'';position:absolute;right:-24px;bottom:-36px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(104,86,217,.13),transparent 66%);pointer-events:none}.driver-work-top{display:flex;align-items:center;justify-content:space-between}.driver-work-top>b{display:grid;place-items:center;min-width:29px;height:29px;padding:0 8px;border-radius:10px;background:#eeeafe;color:#5142BD;font:800 13px Manrope}.driver-work-top .active-trip-dot{width:9px;min-width:9px;height:9px;padding:0;border-radius:50%;background:#6856D9;box-shadow:0 0 0 5px rgba(104,86,217,.13)}.driver-work-card h2{margin:8px 0 5px!important;font-size:18px!important}.driver-work-card p{min-height:30px!important;margin-bottom:15px!important}.driver-work-card button{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:auto;border:0;border-radius:10px;padding:11px;background:#6856D9;color:#fff;font:800 10px 'DM Sans';cursor:pointer}.driver-work-card button.secondary{background:#f1effc;color:#5142BD;border:1px solid #dfdaf6}.driver-work-card button svg{width:15px;height:15px}.driver-work-card.is-offline{opacity:.68}.driver-work-card.is-offline .driver-work-top>b{background:#f2f0f5;color:#706a8a}@media(max-width:900px){.driver-work-card{min-height:186px!important;padding:17px!important}.driver-work-card h2{font-size:16px!important}.driver-work-card p{font-size:9px!important}}
