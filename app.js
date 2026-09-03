@@ -394,13 +394,29 @@ const requestCard = document.getElementById('requestCard');
 let driverQueueBookings=[];
 let driverIsOnline=false;
 
+function clearDriverRequest() {
+  activeBookingId = null;
+  if (!requestCard) return;
+  requestCard.dataset.bookingId = '';
+  requestCard.style.opacity = '';
+  requestCard.style.pointerEvents = '';
+  document.getElementById('requestFare').innerHTML = 'Waiting <small>for booking</small>';
+  document.getElementById('requestPickup').textContent = 'No pending request';
+  document.getElementById('requestDrop').textContent = 'No pending request';
+  document.getElementById('requestLoad').textContent = 'Waiting for customer';
+  requestCard.querySelector('#acceptBtn')?.setAttribute('disabled', 'disabled');
+  requestCard.querySelector('#rejectBtn')?.setAttribute('disabled', 'disabled');
+  const timer = document.querySelector('.timer');
+  if (timer) timer.innerHTML = '00:<b id="timer">00</b>';
+}
+
 function renderDriverQueueList(bookings, selectedId=activeBookingId) {
   const list=document.getElementById('driverRequestList');
   const preview=document.getElementById('driverRoutePreview');
   if(!list)return;
   if(!driverIsOnline){
     list.innerHTML='<div class="driver-queue-empty"><i data-lucide="wifi-off"></i><span>Go online to receive nearby booking requests</span></div>';
-    if(requestCard){requestCard.dataset.bookingId='';requestCard.querySelector('#acceptBtn')?.setAttribute('disabled','disabled');requestCard.querySelector('#rejectBtn')?.setAttribute('disabled','disabled');}
+    clearDriverRequest();
     if(preview)preview.innerHTML='';
     if(window.lucide)lucide.createIcons();
     return;
@@ -408,11 +424,7 @@ function renderDriverQueueList(bookings, selectedId=activeBookingId) {
   const requests=bookings.filter(item=>item.status==='searching');
   if(!requests.length){
     list.innerHTML='<div class="driver-queue-empty"><i data-lucide="radar"></i><span>No new booking requests right now</span></div>';
-    if(requestCard){
-      requestCard.dataset.bookingId='';
-      requestCard.querySelector('#acceptBtn')?.setAttribute('disabled','disabled');
-      requestCard.querySelector('#rejectBtn')?.setAttribute('disabled','disabled');
-    }
+    clearDriverRequest();
     if(preview)preview.innerHTML='';
     if(window.lucide)lucide.createIcons();
     return;
@@ -620,12 +632,23 @@ document.addEventListener('click', async event => {
   }
   const reject = event.target.closest('#rejectBtn');
   if (reject) {
-    const booking = await changeBookingStatus('rejected', requestCard?.dataset.bookingId);
+    reject.disabled = true;
+    const rejectedId = Number(requestCard?.dataset.bookingId);
+    const booking = await changeBookingStatus('rejected', rejectedId);
+    reject.disabled = false;
     if (!booking) return;
-    requestCard.style.opacity = '.35';
-    requestCard.style.pointerEvents = 'none';
-    const timer = document.querySelector('.timer');
-    if (timer) timer.textContent = 'Declined';
+    // A declined request must leave the active card immediately. Reload the
+    // queue and promote the next waiting request instead of fading the old one.
+    await loadDriverQueue();
+    const nextRequest = driverIsOnline && driverQueueBookings.find(item => item.status === 'searching');
+    if (nextRequest) {
+      populateDriverRequest(nextRequest);
+      renderDriverQueueList(driverQueueBookings, nextRequest.id);
+      openDriverRoutePreview(nextRequest);
+    } else {
+      clearDriverRequest();
+      renderDriverQueueList(driverQueueBookings);
+    }
   }
 });
 document.addEventListener('submit',async event=>{
